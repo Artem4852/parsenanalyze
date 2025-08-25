@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Prices Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0b0d10;
+            --panel: #12161b;
+            --muted: #1a2027;
+            --text: #e6edf3;
+            --sub: #a9b2be;
+            --accent: #6ea8ff;
+            --ok: #36c275;
+            --bad: #ff6b6b;
+            --warn: #f6c14b;
+            --border: #25303a;
+            --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans"
+        }
+
+        header {
+            padding: 18px 22px;
+            background: linear-gradient(180deg, #0d1117 0%, #0b0d10 100%);
+            border-bottom: 1px solid var(--border)
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: .3px
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 18px 22px 40px
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow)
+        }
+
+        .controls {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(12, 1fr);
+            padding: 16px
+        }
+
+        .controls .field {
+            grid-column: span 3;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .controls .field.wide {
+            grid-column: span 6
+        }
+
+        label {
+            font-size: 12px;
+            color: var(--sub);
+            letter-spacing: .3px
+        }
+
+        select,
+        input[type="date"] {
+            background: var(--muted);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            outline: none
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            background: var(--accent);
+            color: #0b0d10;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            cursor: pointer
+        }
+
+        .btn.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border)
+        }
+
+        .status {
+            color: var(--sub);
+            font-size: 12px
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(12, 1fr)
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow)
+        }
+
+        .card h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: var(--sub)
+        }
+
+        .kpis {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(6, 1fr)
+        }
+
+        .kpi {
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            min-height: 84px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center
+        }
+
+        .kpi .label {
+            font-size: 11px;
+            color: var(--sub)
+        }
+
+        .kpi .value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 6px
+        }
+
+        .kpi.good .value {
+            color: var(--ok)
+        }
+
+        .kpi.bad .value {
+            color: var(--bad)
+        }
+
+        .kpi.warn .value {
+            color: var(--warn)
+        }
+
+        .col-12 {
+            grid-column: span 12
+        }
+
+        .col-6 {
+            grid-column: span 6
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px
+        }
+
+        .table th,
+        .table td {
+            border-bottom: 1px solid var(--border);
+            padding: 10px 8px;
+            text-align: left;
+            white-space: nowrap
+        }
+
+        .table th {
+            color: var(--sub);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            background: var(--panel)
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+            color: var(--sub)
+        }
+
+        .pill.clickable {
+            cursor: pointer;
+            user-select: none
+        }
+
+        .pill.clickable:hover {
+            background: rgba(255, 255, 255, .04);
+            border-color: #3a4652
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--sub);
+            margin-top: 6px
+        }
+
+        .notice {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--sub)
+        }
+
+        .chartWrap {
+            height: clamp(260px, 45vh, 480px)
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%
+        }
+
+        @media (max-width:980px) {
+            .controls .field {
+                grid-column: span 6
+            }
+
+            .kpis {
+                grid-template-columns: repeat(3, 1fr)
+            }
+
+            .col-6 {
+                grid-column: span 12
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Prices Explorer • JSON time-series (UAH / USD)</h1>
+    </header>
+
+    <div class="wrap">
+        <div class="panel">
+            <div class="controls">
+                <div class="field">
+                    <label>Load data</label>
+                    <div class="row">
+                        <button id="reload" class="btn">Fetch prices_clean.json</button>
+                        <input id="fileInput" type="file" accept=".json" />
+                        <span id="loadStatus" class="status">Waiting…</span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Commodity</label>
+                    <select id="commodity"></select>
+                </div>
+
+                <div class="field">
+                    <label>Company</label>
+                    <select id="company">
+                        <option value="">All companies</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Currency</label>
+                    <select id="currency">
+                        <option value="UAH">UAH</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Start date</label>
+                    <input id="startDate" type="date" />
+                </div>
+
+                <div class="field">
+                    <label>End date</label>
+                    <input id="endDate" type="date" />
+                </div>
+
+                <div class="field">
+                    <label>Aggregation when company = all</label>
+                    <select id="agg">
+                        <option value="mean">Mean</option>
+                        <option value="median">Median</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Options</label>
+                    <div class="row">
+                        <label class="switch"><input id="showMinMax" type="checkbox" checked /> show min/max
+                            lines</label>
+                    </div>
+                </div>
+
+                <div class="field wide">
+                    <label>&nbsp;</label>
+                    <div class="row">
+                        <button id="apply" class="btn">Apply filters</button>
+                        <button id="reset" class="btn secondary">Reset</button>
+                        <button id="exportCsv" class="btn secondary">Export filtered CSV</button>
+                        <span id="sliceStatus" class="status"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top:16px">
+            <div class="card col-12" id="infoBar" style="display:none">
+                <div id="infoContent"></div>
+            </div>
+
+            <div class="card col-12">
+                <h3>Chart</h3>
+                <div class="chartWrap"><canvas id="chart"></canvas></div>
+                <div id="availability" class="notice" style="display:none"></div>
+            </div>
+
+            <div class="card col-12">
+                <h3>Summary</h3>
+                <div class="kpis" id="kpis"></div>
+            </div>
+
+            <div class="card col-6">
+                <h3>Top Highs</h3>
+                <div class="pill" id="highsInfo"></div>
+                <div style="overflow:auto; max-height:340px; margin-top:8px">
+                    <table class="table" id="highsTable"></table>
+                </div>
+            </div>
+
+            <div class="card col-6">
+                <h3>Top Lows</h3>
+                <div class="pill" id="lowsInfo"></div>
+                <div style="overflow:auto; max-height:340px; margin-top:8px">
+                    <table class="table" id="lowsTable"></table>
+                </div>
+            </div>
+
+            <div class="card col-12">
+                <h3>Filtered rows</h3>
+                <div class="pill" id="rowsInfo"></div>
+                <div style="overflow:auto; max-height:420px; margin-top:8px">
+                    <table class="table" id="rowsTable"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // ---------- Helpers ----------
+            const $ = sel => document.querySelector(sel);
+            const fmtDate = d => new Intl.DateTimeFormat('uk-UA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            const fmtUAH = n => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(n);
+            const fmtUSD = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
+            const toISO = d => d.toISOString().slice(0, 10);
+            const parseISO = s => new Date(s + "T00:00:00Z");
+            const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+            const median = a => {
+                if (!a.length) return null;
+                const b = [...a].sort((x, y) => x - y); const m = Math.floor(b.length / 2);
+                return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2;
+            };
+            const stdev = a => {
+                if (a.length < 2) return 0;
+                const m = mean(a); const v = a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length - 1);
+                return Math.sqrt(v);
+            };
+            const escapeHtml = s => String(s).replace(/[&<>"'`]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' }[c]));
+
+            // ---------- State ----------
+            let ROWS = [];               // normalized rows
+            let DATE_MIN = null, DATE_MAX = null;
+            let FAMILY_MAP = new Map();  // family -> Set(leaf names)
+            let COMPANIES = [];          // all companies (sorted)
+            let chart = null;
+
+            const els = {
+                reload: $('#reload'), fileInput: $('#fileInput'), loadStatus: $('#loadStatus'),
+                commodity: $('#commodity'), company: $('#company'), currency: $('#currency'),
+                startDate: $('#startDate'), endDate: $('#endDate'), agg: $('#agg'),
+                showMinMax: $('#showMinMax'), apply: $('#apply'), reset: $('#reset'),
+                exportCsv: $('#exportCsv'), sliceStatus: $('#sliceStatus'),
+                kpis: $('#kpis'), fxNote: $('#fxNote'), availability: $('#availability'),
+                highsInfo: $('#highsInfo'), lowsInfo: $('#lowsInfo'),
+                highsTable: $('#highsTable'), lowsTable: $('#lowsTable'),
+                rowsTable: $('#rowsTable'), rowsInfo: $('#rowsInfo'),
+                canvas: $('#chart'),
+                infoBar: $('#infoBar'),
+                infoContent: $('#infoContent'),
+            };
+
+            // ---------- Load & Normalize ----------
+            async function fetchDefault() {
+                try {
+                    els.loadStatus.textContent = 'Fetching prices_clean.json…';
+                    const res = await fetch('prices_clean.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onData(json);
+                    els.loadStatus.textContent = 'Loaded prices_clean.json ✔';
+                } catch (e) {
+                    els.loadStatus.textContent = 'Fetch failed. Load a file manually.';
+                    console.error(e);
+                }
+            }
+            function onFileChosen(file) {
+                const r = new FileReader();
+                r.onload = () => {
+                    try { onData(JSON.parse(r.result)); els.loadStatus.textContent = `Loaded ${file.name} ✔`; }
+                    catch { els.loadStatus.textContent = 'Invalid JSON'; }
+                };
+                r.readAsText(file);
+            }
+
+            // REPLACED: group by the first word only
+            function baseFamily(name) {
+                const s = String(name).trim();
+                // take the first contiguous sequence of letters at the start (supports Cyrillic)
+                const m = s.match(/^[\p{L}]+/u);
+                if (!m) return s;
+                const w = m[0];
+                // Normalize casing for consistent grouping/display
+                return w.charAt(0).toLocaleUpperCase('uk') + w.slice(1).toLocaleLowerCase('uk');
+            }
+
+            function normalize(json) {
+                const out = [];
+                for (const [dateKey, obj] of Object.entries(json)) {
+                    const date = parseISO(obj?.date ?? dateKey);
+                    const orgs = obj?.organizations || {};
+                    for (const [org, items] of Object.entries(orgs)) {
+                        for (const it of items) {
+                            let UAH = (typeof it.price === 'number') ? it.price : null;
+                            let USD = (typeof it.priceUsd === 'number') ? it.priceUsd : null;
+                            if (UAH === 0) UAH = null; if (USD === 0) USD = null; // ignore zeros
+                            out.push({ date, dateStr: toISO(date), org, commodity: it.name, family: baseFamily(it.name), UAH, USD });
+                        }
+                    }
+                }
+                out.sort((a, b) => a.date - b.date);
+                return out;
+            }
+
+            function buildLookups() {
+                FAMILY_MAP = new Map();
+                const companies = new Set();
+                for (const r of ROWS) {
+                    companies.add(r.org);
+                    if (!FAMILY_MAP.has(r.family)) FAMILY_MAP.set(r.family, new Set());
+                    FAMILY_MAP.get(r.family).add(r.commodity);
+                }
+                COMPANIES = Array.from(companies).sort((a, b) => a.localeCompare(b, 'uk'));
+            }
+
+            function populateSelectors() {
+                // Companies: always all
+                els.company.innerHTML = `<option value="">All companies</option>` +
+                    COMPANIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+                // Commodities: families (… — всі) then leaves
+                const families = Array.from(FAMILY_MAP.keys()).sort((a, b) => a.localeCompare(b, 'uk'));
+                const parts = [];
+                for (const fam of families) {
+                    parts.push(`<option value="agg::${escapeHtml(fam)}">${escapeHtml(fam)} — всі</option>`);
+                    const leaves = Array.from(FAMILY_MAP.get(fam)).sort((a, b) => a.localeCompare(b, 'uk'));
+                    for (const name of leaves) {
+                        parts.push(`<option value="leaf::${escapeHtml(name)}">${escapeHtml(name)}</option>`);
+                    }
+                }
+                els.commodity.innerHTML = parts.join('');
+
+                // Dates
+                els.startDate.min = toISO(DATE_MIN); els.startDate.max = toISO(DATE_MAX);
+                els.endDate.min = toISO(DATE_MIN); els.endDate.max = toISO(DATE_MAX);
+                els.startDate.value = toISO(DATE_MIN);
+                els.endDate.value = toISO(DATE_MAX);
+
+                // Defaults
+                els.currency.value = 'UAH';
+                els.agg.value = 'mean';
+                els.showMinMax.checked = true;
+            }
+
+            function onData(json) {
+                ROWS = normalize(json);
+                if (!ROWS.length) { els.loadStatus.textContent = 'No rows'; return; }
+                DATE_MIN = ROWS[0].date; DATE_MAX = ROWS[ROWS.length - 1].date;
+                buildLookups();
+                populateSelectors();
+                applyFilters();
+            }
+
+            // ---------- Filtering & Aggregation ----------
+            function getFilters() {
+                const [mode, key] = (els.commodity.value || '').split('::'); // mode: 'agg'|'leaf'
+                return {
+                    start: parseISO(els.startDate.value || toISO(DATE_MIN)),
+                    end: parseISO(els.endDate.value || toISO(DATE_MAX)),
+                    commodityMode: mode, commodityKey: key,
+                    company: els.company.value, currency: els.currency.value,
+                    aggMode: els.agg.value, showMinMax: els.showMinMax.checked
+                };
+            }
+
+            function groupBy(arr, keyFn) {
+                const m = new Map();
+                for (const x of arr) {
+                    const k = keyFn(x);
+                    const a = m.get(k); if (a) a.push(x); else m.set(k, [x]);
+                }
+                return m;
+            }
+
+            function computeSeries(f) {
+                // Filter by date (always), and by commodity/company depending on mode.
+                const inRange = ROWS.filter(r => r.date >= f.start && r.date <= f.end);
+                const currency = f.currency;
+
+                // Helper: extract numeric value in chosen currency
+                const val = r => r[currency];
+
+                // Build per-date series depending on commodity selection
+                let labels = [];
+                let seriesMain = [];
+                let seriesMin = [];
+                let seriesMax = [];
+                let statsRows = []; // rows used for stats/highs/lows/table (synthetic when needed)
+
+                const byDate = groupBy(inRange, r => r.dateStr);
+                labels = Array.from(byDate.keys()).sort();
+
+                if (f.commodityMode === 'leaf') { // specific class (e.g., "Пшениця 2 клас")
+                    const cname = f.commodityKey;
+                    for (const d of labels) {
+                        const rows = byDate.get(d).filter(r => r.commodity === cname && (!f.company || r.org === f.company));
+                        const vals = rows.map(val).filter(v => v != null);
+                        if (f.company) {
+                            const v = vals.length ? vals[0] : null; // at most one per company/date
+                            seriesMain.push(v); seriesMin.push(v); seriesMax.push(v);
+                            if (v != null) statsRows.push({ date: rows[0].date, dateStr: d, org: f.company, commodity: cname, value: v, UAH: (currency === 'UAH' ? v : null), USD: (currency === 'USD' ? v : null) });
+                        } else {
+                            const a = (f.aggMode === 'median') ? median(vals) : mean(vals);
+                            seriesMain.push(a);
+                            seriesMin.push(vals.length ? Math.min(...vals) : null);
+                            seriesMax.push(vals.length ? Math.max(...vals) : null);
+                            // for stats, push each firm’s raw row
+                            for (const rr of rows) { const v = val(rr); if (v != null) statsRows.push({ ...rr, value: v }); }
+                        }
+                    }
+                } else if (f.commodityMode === 'agg') { // family aggregate ("… — всі")
+                    const fam = f.commodityKey;
+                    for (const d of labels) {
+                        const rows = byDate.get(d).filter(r => r.family === fam);
+                        if (f.company) {
+                            // only this company's classes today
+                            const clsVals = rows.filter(r => r.org === f.company).map(val).filter(v => v != null);
+                            const v = mean(clsVals); // family average within company
+                            seriesMain.push(v ?? null); seriesMin.push(v ?? null); seriesMax.push(v ?? null);
+                            if (v != null) statsRows.push({ date: rows[0].date, dateStr: d, org: f.company, commodity: `${fam} — всі`, value: v, UAH: (currency === 'UAH' ? v : null), USD: (currency === 'USD' ? v : null) });
+                        } else {
+                            // compute per-company family average first
+                            const byOrg = groupBy(rows, r => r.org);
+                            const perFirm = [];
+                            for (const [org, arr] of byOrg.entries()) {
+                                const v = mean(arr.map(val).filter(v => v != null));
+                                if (v != null) { perFirm.push({ org, v }); statsRows.push({ date: arr[0].date, dateStr: d, org, commodity: `${fam} — всі`, value: v }); }
+                            }
+                            const vals = perFirm.map(x => x.v);
+                            const a = (f.aggMode === 'median') ? median(vals) : mean(vals);
+                            seriesMain.push(vals.length ? a : null);
+                            seriesMin.push(vals.length ? Math.min(...vals) : null);
+                            seriesMax.push(vals.length ? Math.max(...vals) : null);
+                        }
+                    }
+                }
+
+                return { labels, seriesMain, seriesMin, seriesMax, statsRows };
+            }
+
+            // ---------- Rendering ----------
+            function computeYBounds(seriesMain, seriesMin, seriesMax, showMinMax) {
+                const vals = [];
+                const push = arr => arr.forEach(v => { if (Number.isFinite(v)) vals.push(v); });
+                push(seriesMain); if (showMinMax) { push(seriesMin); push(seriesMax); }
+                if (!vals.length) return {};
+                let minV = Math.min(...vals), maxV = Math.max(...vals);
+                if (minV === maxV) {
+                    const pad = Math.max(1, Math.abs(minV) * 0.05);
+                    return { suggestedMin: minV - pad, suggestedMax: maxV + pad };
+                }
+                const span = maxV - minV; const pad = Math.max(1, span * 0.08);
+                return { suggestedMin: minV - pad, suggestedMax: maxV + pad };
+            }
+
+            function seriesChangePct(series) {
+                const arr = series.filter(v => Number.isFinite(v));
+                if (arr.length < 2) return null;
+                const first = arr[0], last = arr[arr.length - 1];
+                if (first === 0) return null;
+                return (last - first) / first * 100;
+            }
+
+            function computeStats(rows) {
+                const vals = rows.map(r => r.value).filter(v => v != null);
+                if (!vals.length) return null;
+                const minVal = Math.min(...vals), maxVal = Math.max(...vals);
+                const avgVal = mean(vals), medVal = median(vals), sdVal = stdev(vals);
+                const cov = avgVal ? (sdVal / avgVal) * 100 : 0;
+                const minRow = rows.filter(r => r.value === minVal)[0];
+                const maxRow = rows.filter(r => r.value === maxVal)[0];
+                return { count: vals.length, minVal, maxVal, avgVal, medVal, sdVal, cov, minRow, maxRow };
+            }
+
+            function highsLows(rows, take = 10) {
+                const good = rows.filter(r => r.value != null);
+                const highs = [...good].sort((a, b) => b.value - a.value).slice(0, take);
+                const lows = [...good].sort((a, b) => a.value - b.value).slice(0, take);
+                return { highs, lows };
+            }
+
+            function renderInfoBar(f) {
+                const sellers = companiesSellingSelection(f);
+                const labelTxt = f.commodityMode === 'agg' ? `${f.commodityKey} — всі` : f.commodityKey;
+
+                let show = false, html = '';
+                const pills = sellers.map(s =>
+                    `<span class="pill clickable" data-company="${escapeHtml(s)}">${escapeHtml(s)}</span>`
+                ).join(' ');
+
+                if (!f.company) {
+                    show = true;
+                    html = sellers.length
+                        ? `<strong>This culture is sold by:</strong> ${pills}`
+                        : `<strong>No company sold “${escapeHtml(labelTxt)}” in this period.</strong>`;
+                } else if (!sellers.includes(f.company)) {
+                    show = true;
+                    html = `<strong>“${escapeHtml(labelTxt)}” is not available at ${escapeHtml(f.company)} in this period.</strong> ` +
+                        (sellers.length ? `Available at: ${pills}` : `No sellers in this period.`);
+                }
+
+                if (show) {
+                    els.infoBar.style.display = '';
+                    els.infoContent.innerHTML = html;
+                } else {
+                    els.infoBar.style.display = 'none';
+                    els.infoContent.innerHTML = '';
+                }
+            }
+
+            function render() {
+                const f = getFilters();
+                const { labels, seriesMain, seriesMin, seriesMax, statsRows } = computeSeries(f);
+
+                renderInfoBar(f);
+
+                // Chart
+                const currencyFmt = (f.currency === 'UAH') ? fmtUAH : fmtUSD;
+                const datasets = [];
+                const showMM = f.showMinMax && !f.company;
+                if (showMM) {
+                    datasets.push({ label: 'Min', data: seriesMin, borderWidth: 1.5, borderColor: 'rgba(255,107,107,0.9)', pointRadius: 0, tension: .25 });
+                    datasets.push({ label: 'Max', data: seriesMax, borderWidth: 1.5, borderColor: 'rgba(54,194,117,0.9)', pointRadius: 0, tension: .25 });
+                }
+                const seriesLabel = f.company ? f.company :
+                    (f.commodityMode === 'agg' ? `${f.aggMode.toUpperCase()} (firms, family)` : `${f.aggMode.toUpperCase()} (firms)`);
+                datasets.push({ label: seriesLabel, data: seriesMain, borderWidth: 2.5, borderColor: 'rgba(110,168,255,1)', pointRadius: 0, tension: .25 });
+
+                const yb = computeYBounds(seriesMain, seriesMin, seriesMax, showMM);
+                const options = {
+                    responsive: true, maintainAspectRatio: false, spanGaps: true,
+                    scales: {
+                        x: { ticks: { color: '#a9b2be', maxRotation: 0, autoSkip: true }, grid: { color: 'rgba(37,48,58,0.5)' } },
+                        y: { ticks: { color: '#a9b2be', callback: (v) => currencyFmt(v) }, grid: { color: 'rgba(37,48,58,0.5)' }, ...yb }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e6edf3' } },
+                        tooltip: { callbacks: { title: (c) => c[0]?.label || '', label: (c) => `${c.dataset.label}: ${currencyFmt(c.parsed.y)}` } }
+                    }
+                };
+                if (chart) chart.destroy();
+                chart = new Chart(els.canvas.getContext('2d'), { type: 'line', data: { labels, datasets }, options });
+
+                els.sliceStatus.textContent = `${statsRows.length} observations`;
+
+                // Summary KPIs
+                const stats = computeStats(statsRows);
+                const items = [];
+                items.push(kpi('Observations', String(statsRows.length || 0)));
+                if (stats) {
+                    items.push(kpi('Min', currencyFmt(stats.minVal), 'bad', `${fmtDate(stats.minRow.date)} • ${stats.minRow.org}`));
+                    items.push(kpi('Max', currencyFmt(stats.maxVal), 'good', `${fmtDate(stats.maxRow.date)} • ${stats.maxRow.org}`));
+                    items.push(kpi('Mean', currencyFmt(stats.avgVal)));
+                    items.push(kpi('Median', currencyFmt(stats.medVal)));
+                    items.push(kpi('StDev', currencyFmt(stats.sdVal), 'warn'));
+                    items.push(kpi('CoV', `${stats.cov.toFixed(1)}%`));
+                    const chg = seriesChangePct(seriesMain);
+                    if (chg != null) items.push(kpi('Period change', `${(chg >= 0 ? '+' : '')}${chg.toFixed(2)}%`, chg >= 0 ? 'good' : 'bad'));
+                }
+                els.kpis.innerHTML = items.join('');
+
+                // Implied FX note (only when both currencies present in raw slice is overkill here; skip to keep simple)
+                els.fxNote.style.display = 'none';
+
+                // Highs / Lows
+                const { highs, lows } = highsLows(statsRows, 10);
+                els.highsInfo.textContent = `${highs.length} records`;
+                els.lowsInfo.textContent = `${lows.length} records`;
+                els.highsTable.innerHTML = tableHtml(['Date', 'Company', 'Commodity', 'Price'], highs.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                els.lowsTable.innerHTML = tableHtml(['Date', 'Company', 'Commodity', 'Price'], lows.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+
+                // Rows table
+                els.rowsInfo.textContent = `${statsRows.length} rows`;
+                els.rowsTable.innerHTML = tableHtml(['Date (local)', 'ISO', 'Company', 'Commodity', 'Value'],
+                    statsRows.map(r => [fmtDate(r.date), r.dateStr, r.org, r.commodity, currencyFmt(r.value)]));
+            }
+
+            function kpi(label, value, mood, sub) {
+                return `<div class="kpi ${mood || ''}">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${escapeHtml(value)}</div>
+      ${sub ? `<div class="label" style="margin-top:6px">${escapeHtml(sub)}</div>` : ''}
+    </div>`;
+            }
+
+            function tableHtml(headers, rows) {
+                const thead = `<thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+                const tbody = `<tbody>${rows.map(r => `<tr>${r.map(c => `<td>${escapeHtml(String(c))}</td>`).join('')}</tr>`).join('')}</tbody>`;
+                return thead + tbody;
+            }
+
+            function companiesSellingSelection(f) {
+                const inRange = ROWS.filter(r => r.date >= f.start && r.date <= f.end);
+                let sellers = new Set();
+                if (f.commodityMode === 'leaf') {
+                    for (const r of inRange) if (r.commodity === f.commodityKey && r[f.currency] != null) sellers.add(r.org);
+                } else {
+                    for (const r of inRange) if (r.family === f.commodityKey && r[f.currency] != null) sellers.add(r.org);
+                }
+                return Array.from(sellers).sort((a, b) => a.localeCompare(b, 'uk'));
+            }
+
+            // ---------- CSV ----------
+            function exportCsv() {
+                const f = getFilters();
+                const { labels, seriesMain, seriesMin, seriesMax, statsRows } = computeSeries(f);
+                if (!statsRows.length) return;
+                const rows = [['date_local', 'date_iso', 'company', 'commodity', 'value', 'currency']];
+                for (const r of statsRows) {
+                    rows.push([fmtDate(r.date), r.dateStr, r.org, r.commodity, r.value, f.currency]);
+                }
+                const csv = rows.map(r => r.map(v => {
+                    const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                }).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'filtered_prices.csv';
+                document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+            }
+
+            // ---------- Events ----------
+            els.reload.addEventListener('click', fetchDefault);
+            els.fileInput.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onFileChosen(f); });
+            els.apply.addEventListener('click', render);
+            els.reset.addEventListener('click', () => {
+                els.company.value = ''; els.currency.value = 'UAH'; els.agg.value = 'mean'; els.showMinMax.checked = true;
+                els.startDate.value = toISO(DATE_MIN); els.endDate.value = toISO(DATE_MAX);
+                // keep current commodity selection as-is (no auto changes)
+                render();
+            });
+            els.exportCsv.addEventListener('click', exportCsv);
+            ['change'].forEach(ev => {
+                els.company.addEventListener(ev, render);
+                els.commodity.addEventListener(ev, render);
+                els.currency.addEventListener(ev, render);
+                els.startDate.addEventListener(ev, render);
+                els.endDate.addEventListener(ev, render);
+                els.agg.addEventListener(ev, render);
+                els.showMinMax.addEventListener(ev, render);
+            });
+            els.infoBar.addEventListener('click', (e) => {
+                const t = e.target.closest('.pill.clickable[data-company]');
+                if (!t) return;
+                const company = t.getAttribute('data-company');
+                els.company.value = company;   // set selection
+                render();                      // update UI
+            });
+
+            // ---------- Start ----------
+            fetchDefault();
+        })();
+    </script>
+</body>
+
+</html>
