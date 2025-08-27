@@ -1,0 +1,177 @@
+[
+  {
+    "id": "u134971",
+    "people": [
+      {
+        "photo_id": "u154940",
+        "role": "Менеджер із закупівель агропродукції, вся Україна",
+        "email": "akalynchuk@agroprosperis.com",
+        "phone": "+38 (067) 240 82 68",
+        "phone_alt": "+3 57 99 36 99 42 (Cyprus)",
+        "name": "Андрій Калинчук",
+        "image": "https://agroprosperis.com/images/kalinchuk.jpg?crc=394373304"
+      }
+    ],
+    "region": "Головний офіс"
+  },
+  {
+    "id": "u135128",
+    "people": [
+      {
+        "photo_id": "u135140",
+        "name": "Ігор Лєгостаєв",
+        "email": "iliegostaiev@agroprosperis.com",
+        "phone": "+38 067 558 05 45",
+        "image": "https://agroprosperis.com/images/legostaev.jpg?crc=9418628"
+      }
+    ],
+    "region": "Харківська обл."
+  },
+  {
+    "id": "u135050",
+    "people": [
+      {
+        "photo_id": "u135058",
+        "name": "Олександр Наголюк",
+        "email": "onaholiuk@agroprosperis.com",
+        "phone": "+38 067 800 53 22",
+        "image": "https://agroprosperis.com/images/nagoljuk_00-u135058-fr.png?crc=3944627780"
+      },
+      {
+        "photo_id": "u135063",
+        "name": "Олександр Значенко",
+        "email": "oznachenko@agroprosperis.com",
+        "phone": "+38 067 824 16 05",
+        "image": "https://agroprosperis.com/images/znaychenko_01-u138038-fr.png?crc=368487887"
+      }
+    ],
+    "region": "Вінницька обл."
+  },
+  {
+    "id": "u135082",
+    "people": [
+      {
+        "photo_id": "u157267",
+        "name": "Павло Леонтьев",
+        "email": "pleontev@agroprosperis.com",
+        "phone": "+38 067 559 83 21",
+        "image": "https://agroprosperis.com/images/leontiev-u157267-fr.png?crc=4095916548"
+      }
+    ],
+    "region": "Одеська обл."
+  },
+  {
+    "id": "u134982",
+    "people": [
+      {
+        "photo_id": "u134991",
+        "email": "iliegostaiev@agroprosperis.com",
+        "phone": "+38 067 558 05 45",
+        "name": "Ігор Лєгостаєв",
+        "image": "https://agroprosperis.com/images/legostaev.jpg?crc=9418628"
+      }
+    ],
+    "region": "Полтавська обл."
+  },
+  {
+    "id": "u135013",
+    "people": [
+      {
+        "photo_id": "u135025",
+        "name": "Олександр Значенко",
+        "email": "oznachenko@agroprosperis.com",
+        "phone": "+38 067 824 16 05",
+        "image": "https://agroprosperis.com/images/znaychenko_01-u138038-fr.png?crc=368487887"
+      }
+    ],
+    "region": "Черкаська обл."
+  },
+  {
+    "id": "u135002",
+    "people": [
+      {
+        "photo_id": "u299231",
+        "name": "Ігор Лєгостаєв",
+        "email": "iliegostaiev@agroprosperis.com",
+        "phone": "+38 067 558 05 45",
+        "image": "https://agroprosperis.com/images/legostaev.jpg?crc=9418628"
+      }
+    ],
+    "region": "Чернігівська обл."
+  },
+  {
+    "id": "u135141",
+    "people": [
+      {
+        "photo_id": "u135143",
+        "name": "Ігор Лєгостаєв",
+        "email": "iliegostaiev@agroprosperis.com",
+        "phone": "+38 067 558 05 45",
+        "image": "https://agroprosperis.com/images/legostaev.jpg?crc=9418628"
+      }
+    ],
+    "region": "Сумська обл."
+  },
+  {
+    "id": "u135945",
+    "people": [
+      {
+        "photo_id": "u136080",
+        "email": "onaholiuk@agroprosperis.com",
+        "phone": "+38 067 800 53 22",
+        "name": "Олександр Наголюк",
+        "image": "https://agroprosperis.com/images/nagoljuk_00-u135058-fr.png?crc=3944627780"
+      },
+      {
+        "photo_id": "u174801",
+        "email": "aimelnyk@agroprosperis.com",
+        "phone": "+38 067 645 16 82",
+        "name": "Анатолій Мельник",
+        "image": "https://agroprosperis.com/images/melnik.jpg?crc=3976265059"
+      }
+    ],
+    "region": "Хмельницька обл."
+  },
+  {
+    "id": "u136185",
+    "people": [
+      {
+        "photo_id": "u174717",
+        "role": "Менеджер із закупівель агропродукції",
+        "email": "avkulyk@agroprosperis.com",
+        "phone": "+38 067 153 49 60",
+        "name": "Андрій Кулик",
+        "image": "https://agroprosperis.com/images/avkulyk.jpg?crc=61150634"
+      }
+    ],
+    "region": "Миколаївська обл."
+  },
+  {
+    "id": "u174865",
+    "people": [
+      {
+        "photo_id": "u174905",
+        "email": "aimelnyk@agroprosperis.com",
+        "phone": "+38 067 645 16 82",
+        "name": "Анатолій Мельник",
+        "image": "https://agroprosperis.com/images/melnik.jpg?crc=3976265059"
+      }
+    ],
+    "region": "Рівненська обл."
+  },
+  {
+    "id": "u185419",
+    "people": [
+      {
+        "photo_id": "u186622",
+        "role": "Менеджер із закупівель агропродукції, вся Україна",
+        "email": "akalynchuk@agroprosperis.com",
+        "phone": "+38 (067) 240 82 68",
+        "phone_alt": "+3 57 99 36 99 42 (Cyprus)",
+        "name": "Андрій Калинчук",
+        "image": "https://agroprosperis.com/images/kalinchuk.jpg?crc=394373304"
+      }
+    ],
+    "region": "Кіровоградська обл."
+  }
+]

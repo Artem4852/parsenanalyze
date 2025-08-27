@@ -1,0 +1,313 @@
+[
+  {
+    "id": "u137938",
+    "people": [
+      {
+        "photo_id": "u137951",
+        "role": "директор із закупівель та дистрибуції, вся Україна",
+        "email": "vkhochai@agroprosperis.com",
+        "name": "Володимир Хочай"
+      },
+      {
+        "photo_id": "u137954",
+        "role": "директор з продажів дистрибуції (насіння, ЗЗР, добрива)",
+        "email": "okuraieva@agroprosperis.com",
+        "name": "Ольга Кураєва"
+      },
+      {
+        "photo_id": "u138828",
+        "email": "nruba@agroprosperis.com",
+        "phone": "+38 067 469 23 41",
+        "name": "Наталія Руба",
+        "role": "Менеджер з електронного документообігу"
+      },
+      {
+        "photo_id": "u146954",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      },
+      {
+        "photo_id": "u195971",
+        "email": "ovmanzhara@agroprosperis.com",
+        "phone": "+38 067 485 92 44",
+        "name": "Олена Манжара",
+        "role": "Менеджер з продажів"
+      }
+    ],
+    "region": "Головний офіс"
+  },
+  {
+    "id": "u138094",
+    "people": [
+      {
+        "photo_id": "u138096",
+        "name": "Володимир Борківець",
+        "email": "vborkivets@agroprosperis.com",
+        "phone": "+38 067 824 16 04"
+      },
+      {
+        "photo_id": "u159232",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Харківська обл."
+  },
+  {
+    "id": "u137959",
+    "people": [
+      {
+        "photo_id": "u157400",
+        "name": "Андрій Поперечний",
+        "email": "apoperechnyi@agroprosperis.com",
+        "phone": "+38 067 824 16 03"
+      },
+      {
+        "photo_id": "u188066",
+        "name": "Олена Манжара",
+        "email": "ovmanzhara@agroprosperis.com",
+        "phone": "+38 067 485 92 44"
+      }
+    ],
+    "region": "Вінницька обл."
+  },
+  {
+    "id": "u138015",
+    "people": [
+      {
+        "photo_id": "u138020",
+        "name": "Назарій Білаш",
+        "email": "nbilash@ap-bank.com",
+        "phone": "+38 067 445 71 60"
+      },
+      {
+        "photo_id": "u147868",
+        "name": "Юрій Іванчук",
+        "email": "yuivanchuk@ap-bank.com",
+        "phone": "+38 (066) 532 94 86"
+      }
+    ],
+    "region": "Волинська обл."
+  },
+  {
+    "id": "u138050",
+    "people": [
+      {
+        "photo_id": "u138058",
+        "name": "Андрій Поперечний",
+        "email": "apoperechnyi@agroprosperis.com",
+        "phone": "+38 067 449 20 86"
+      },
+      {
+        "photo_id": "u159106",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Житомирська обл."
+  },
+  {
+    "id": "u138072",
+    "people": [
+      {
+        "photo_id": "u138077",
+        "email": "vborkivets@agroprosperis.com",
+        "phone": "+38 067 824 16 04",
+        "name": "Володимир Борківець"
+      },
+      {
+        "photo_id": "u138929",
+        "email": "ikopa@ap-bank.com",
+        "phone": "+38 067 433 63 01",
+        "name": "Ігор Копа"
+      },
+      {
+        "photo_id": "u159148",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Полтавська обл."
+  },
+  {
+    "id": "u137892",
+    "people": [
+      {
+        "photo_id": "u137895",
+        "name": "Назарій Білаш",
+        "email": "nbilash@ap-bank.com",
+        "phone": "+38 067 445 71 60"
+      },
+      {
+        "photo_id": "u147752",
+        "name": "Юрій Іванчук",
+        "email": "yuivanchuk@ap-bank.com",
+        "phone": "+38 (066) 532 94 86"
+      }
+    ],
+    "region": "Рівненська обл."
+  },
+  {
+    "id": "u137980",
+    "people": [
+      {
+        "photo_id": "u137983",
+        "name": "Назарій Білаш",
+        "email": "nbilash@ap-bank.com",
+        "phone": "+38 067 445 71 60"
+      },
+      {
+        "photo_id": "u148752",
+        "name": "Роман Колибаб’юк",
+        "email": "rkolybabiuk@ap-bank.com",
+        "phone": "+38 096 100 63 59"
+      }
+    ],
+    "region": "Тернопільська обл."
+  },
+  {
+    "id": "u138026",
+    "people": [
+      {
+        "photo_id": "u138038",
+        "name": "Олександр Значенко",
+        "email": "oznachenko@agroprosperis.com",
+        "phone": "+38 067 824 16 05"
+      }
+    ],
+    "region": "Черкаська обл."
+  },
+  {
+    "id": "u138004",
+    "people": [
+      {
+        "photo_id": "u138013",
+        "email": "vpushka@ap-bank.com",
+        "phone": "+38 098 927 75 92",
+        "name": "Віталій Пушка"
+      },
+      {
+        "photo_id": "u159274",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Чернігівська обл."
+  },
+  {
+    "id": "u137993",
+    "people": [
+      {
+        "photo_id": "u138001",
+        "name": "Віталій Крамаренко",
+        "email": "vkramarenko@agroprosperis.com",
+        "phone": "+38 067 440 68 59"
+      },
+      {
+        "photo_id": "u159190",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Сумська обл."
+  },
+  {
+    "id": "u138083",
+    "people": [
+      {
+        "photo_id": "u157799",
+        "name": "Руслан Орел",
+        "email": "rorel@agroprosperis.com",
+        "phone": "+38 067 352 86 31"
+      }
+    ],
+    "region": "Хмельницька обл."
+  },
+  {
+    "id": "u138061",
+    "people": [
+      {
+        "photo_id": "u138065",
+        "email": "nbilash@ap-bank.com",
+        "phone": "+38 067 445 71 60",
+        "name": "Назарій Білаш"
+      }
+    ],
+    "region": "Львівська обл."
+  },
+  {
+    "id": "u137903",
+    "people": [
+      {
+        "photo_id": "u137907",
+        "email": "nbilash@ap-bank.com",
+        "phone": "+38 067 445 71 60",
+        "name": "Назарій Білаш"
+      }
+    ],
+    "region": "Чернівецька обл."
+  },
+  {
+    "id": "u138107",
+    "people": [
+      {
+        "photo_id": "u168279",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Миколаївська обл."
+  },
+  {
+    "id": "u145460",
+    "people": [
+      {
+        "photo_id": "u168321",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Одеська обл."
+  },
+  {
+    "id": "u145544",
+    "people": [
+      {
+        "photo_id": "u150256",
+        "name": "Андрій Соколовський",
+        "email": "asokolovskyi@agroprosperis.com",
+        "phone": "+38 067 352 86 57"
+      }
+    ],
+    "region": "Кіровоградська обл."
+  },
+  {
+    "id": "u147102",
+    "people": [
+      {
+        "photo_id": "u159316",
+        "name": "Лілія Стрихар",
+        "email": "lstrykhar@agroprosperis.com",
+        "phone": "+38 067 352 86 12",
+        "role": "менеджер із збуту"
+      }
+    ],
+    "region": "Луганська обл."
+  }
+]
