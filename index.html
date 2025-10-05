@@ -514,6 +514,43 @@
                 grid-template-columns: 1fr
             }
         }
+
+        /* ===== Elevators ===== */
+        .elevGrid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(12, 1fr)
+        }
+
+        .elevCard {
+            grid-column: span 6;
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: var(--shadow)
+        }
+
+        .elevCard .title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 6px
+        }
+
+        .elevCard .line {
+            font-size: 13px;
+            margin-top: 4px
+        }
+
+        .elevCard a {
+            color: var(--accent);
+        }
+
+        @media (max-width:560px) {
+            .elevCard {
+                grid-column: span 12
+            }
+        }
     </style>
 </head>
 
@@ -526,6 +563,8 @@
         <nav class="tabs">
             <button class="tab active" data-tab="prices">Prices</button>
             <button class="tab" data-tab="contacts">Contacts</button>
+            <button class="tab" data-tab="elev-prices">Elevator prices</button>
+            <button class="tab" data-tab="elev-info">Elevators</button>
         </nav>
 
         <!-- =================== PRICES TAB =================== -->
@@ -536,6 +575,7 @@
                         <label>Load data</label>
                         <div class="row">
                             <button id="reload" class="btn">Fetch prices_clean.json</button>
+                            <button id="reloadKernel" class="btn">Fetch kernel.json</button>
                             <input id="fileInput" type="file" accept=".json" />
                             <span id="loadStatus" class="status">Waiting…</span>
                         </div>
@@ -549,21 +589,13 @@
                         </select>
                     </div>
 
-                    <div class="field">
-                        <label>Currency</label>
-                        <select id="currency">
-                            <option value="UAH">UAH</option>
-                            <option value="USD">USD</option>
-                        </select>
-                    </div>
-
-                    <div class="field">
+                    <!-- <div class="field">
                         <label>Aggregation when company = all</label>
                         <select id="agg">
                             <option value="mean">Mean</option>
                             <option value="median">Median</option>
                         </select>
-                    </div>
+                    </div> -->
 
                     <div class="field">
                         <label>Start date</label>
@@ -576,12 +608,20 @@
                     </div>
 
                     <div class="field">
+                        <label>Currency</label>
+                        <select id="currency">
+                            <option value="UAH">UAH</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+
+                    <!-- <div class="field">
                         <label>Options</label>
                         <div class="row">
                             <label class="switch"><input id="showMinMax" type="checkbox" checked /> show min/max
                                 lines</label>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="field wide">
                         <label>&nbsp;</label>
@@ -711,6 +751,151 @@
                 </div>
             </div>
         </section>
+
+        <!-- =================== ELEVATOR PRICES TAB =================== -->
+        <section id="tab-elev-prices" hidden>
+            <div class="panel">
+                <div class="controls">
+                    <div class="field">
+                        <label>Load elevators</label>
+                        <div class="row">
+                            <button id="elevReload" class="btn">Fetch elevators.json</button>
+                            <input id="elevFile" type="file" accept=".json" />
+                            <span id="elevStatus" class="status">Waiting…</span>
+                        </div>
+                        <div class="hint">Load the default file or choose a JSON file.</div>
+                    </div>
+
+                    <div class="field">
+                        <label>Start date</label>
+                        <input id="elevStartDate" type="date" />
+                    </div>
+
+                    <div class="field">
+                        <label>End date</label>
+                        <input id="elevEndDate" type="date" />
+                    </div>
+
+                    <div class="field wide">
+                        <label>&nbsp;</label>
+                        <div class="row">
+                            <button id="elevApply" class="btn">Apply filters</button>
+                            <button id="elevReset" class="btn secondary">Reset</button>
+                            <button id="elevExportCsv" class="btn secondary">Export filtered CSV</button>
+                            <span id="elevSliceStatus" class="status"></span>
+                        </div>
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12; display: none">
+                        <label>Elevators (multi)</label>
+                        <div class="regionsBar" id="elevElevatorsBar"></div>
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12; display: none">
+                        <label>Terminals (multi)</label>
+                        <div class="regionsBar" id="elevTerminalsBar"></div>
+                    </div>
+                </div>
+
+                <!-- Multi-selection of cultures for elevators -->
+                <div class="culture-panel">
+                    <div class="row" style="justify-content:space-between;align-items:center">
+                        <h3 style="margin:0;color:var(--sub)">Select cultures (multiple)</h3>
+                        <div class="row">
+                            <button id="elevSelectNone" class="btn secondary">Clear all</button>
+                        </div>
+                    </div>
+                    <div id="elevCultureGrid" class="culture-grid"></div>
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:16px">
+                <div class="card col-12" id="elevInfoBar" style="display:none">
+                    <div id="elevInfoContent"></div>
+                </div>
+
+                <div class="card col-12 chartCard">
+                    <h3>Chart</h3>
+                    <div class="chartWrap" id="elevChartWrap">
+                        <button id="elevFsBtn" class="chartFsBtn" title="Enter fullscreen"
+                            aria-label="Enter fullscreen">⤢</button>
+                        <canvas id="elevChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3>Summary</h3>
+                    <div class="kpis" id="elevKpis"></div>
+                </div>
+
+                <div class="card col-6">
+                    <h3>Top Highs</h3>
+                    <div class="pill" id="elevHighsInfo"></div>
+                    <div style="overflow:auto; max-height:340px; margin-top:8px">
+                        <table class="table" id="elevHighsTable"></table>
+                    </div>
+                </div>
+
+                <div class="card col-6">
+                    <h3>Top Lows</h3>
+                    <div class="pill" id="elevLowsInfo"></div>
+                    <div style="overflow:auto; max-height:340px; margin-top:8px">
+                        <table class="table" id="elevLowsTable"></table>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3>Filtered rows</h3>
+                    <div class="pill" id="elevRowsInfo"></div>
+                    <div style="overflow:auto; max-height:420px; margin-top:8px">
+                        <table class="table" id="elevRowsTable"></table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== ELEVATORS DIRECTORY TAB =================== -->
+        <section id="tab-elev-info" hidden>
+            <div class="panel">
+                <div class="controls">
+                    <div class="field">
+                        <label>Load elevators</label>
+                        <div class="row">
+                            <button id="elevReload2" class="btn">Fetch elevators.json</button>
+                            <input id="elevFile2" type="file" accept=".json" />
+                            <span id="elevStatus2" class="status">Waiting…</span>
+                        </div>
+                        <div class="hint">Load the default file or choose a JSON file.</div>
+                    </div>
+
+                    <div class="field">
+                        <label>Region</label>
+                        <select id="elevRegionSelect">
+                            <option value="">All regions</option>
+                        </select>
+                    </div>
+
+                    <div class="field wide">
+                        <label>Search</label>
+                        <input id="elevSearch" type="search" placeholder="Name, region, director, trader…" />
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12">
+                        <label>Quick switch</label>
+                        <div class="regionsBar" id="elevRegionsBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:16px">
+                <div class="card col-12">
+                    <h3>Elevators</h3>
+                    <div id="elevPeopleMeta" class="hint" style="margin-bottom:8px"></div>
+                    <div class="elevGrid" id="elevGrid"></div>
+                    <div class="peopleEmpty" id="elevEmpty" style="display:none">No matches.</div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script>
@@ -735,9 +920,9 @@
             }
             function formatTickLabel(iso, maxTicks) {
                 const d = new Date(iso + 'T00:00:00Z');
-                if (maxTicks <= 6) return String(d.getUTCFullYear());
-                if (maxTicks <= 12) return d.toLocaleDateString('uk-UA', { year: '2-digit', month: '2-digit' });
-                return d.toLocaleDateString('uk-UA', { year: '2-digit', month: '2-digit' });
+                if (maxTicks <= 4) return String(d.getUTCFullYear());
+                if (maxTicks <= 8) return d.toLocaleDateString('uk-UA', { year: '4-digit', month: '2-digit' });
+                return d.toLocaleDateString('uk-UA', { year: '2-digit', month: '2-digit', day: '2-digit' });
             }
 
             // ---------- Global State ----------
@@ -756,15 +941,32 @@
             const CATEGORY = { distribution: 'Менеджери з Дистрибуції', procurement: 'Менеджери із закупівлі' };
             let categorySel = '';
 
+            // ---------- Elevator data state ----------
+            let ELEV_ROWS = [];
+            let ELEV_INFO = []; // directory cards
+            let ELEV_DATE_MIN = null, ELEV_DATE_MAX = null;
+            let ELEV_FAMILY = new Map();
+            let ELEV_ELEVATORS = [];
+            let ELEV_TERMINALS = [];
+            const elevSelected = new Set();       // 'eagg::family' | 'eleaf::crop'
+            const elevElevSel = new Set();        // chosen elevators (empty = all)
+            const elevTermSel = new Set();        // chosen terminals (empty = all)
+            let elevChart = null;
+            let ELEV_REGIONS = [];
+            let elevRegionSel = '';
+            let elevSearchSel = '';
+
             // ---------- Element refs ----------
             const els = {
                 // tabs
                 tabBtns: document.querySelectorAll('.tab'),
                 tabPrices: $('#tab-prices'),
                 tabContacts: $('#tab-contacts'),
+                tabElevPrices: document.querySelector('#tab-elev-prices'),
+                tabElevInfo: document.querySelector('#tab-elev-info'),
 
                 // prices
-                reload: $('#reload'), fileInput: $('#fileInput'), loadStatus: $('#loadStatus'),
+                reload: $('#reload'), reloadKernel: $('#reloadKernel'), fileInput: $('#fileInput'), loadStatus: $('#loadStatus'),
                 company: $('#company'), currency: $('#currency'),
                 startDate: $('#startDate'), endDate: $('#endDate'), agg: $('#agg'),
                 showMinMax: $('#showMinMax'), apply: $('#apply'), reset: $('#reset'),
@@ -784,6 +986,25 @@
                 categorySelect: $('#categorySelect'), categoriesBar: $('#categoriesBar'),
                 contactSearch: $('#contactSearch'),
                 peopleGrid: $('#peopleGrid'), peopleEmpty: $('#peopleEmpty'), peopleMeta: $('#peopleMeta'),
+
+                // elevator prices
+                elevReload: $('#elevReload'), elevFile: $('#elevFile'), elevStatus: $('#elevStatus'),
+                elevStartDate: $('#elevStartDate'), elevEndDate: $('#elevEndDate'),
+                elevApply: $('#elevApply'), elevReset: $('#elevReset'), elevExportCsv: $('#elevExportCsv'),
+                elevSliceStatus: $('#elevSliceStatus'),
+                elevElevatorsBar: $('#elevElevatorsBar'), elevTerminalsBar: $('#elevTerminalsBar'),
+                elevCultureGrid: $('#elevCultureGrid'), elevSelectNone: $('#elevSelectNone'),
+                elevInfoBar: $('#elevInfoBar'), elevInfoContent: $('#elevInfoContent'),
+                elevChart: $('#elevChart'), elevChartWrap: $('#elevChartWrap'), elevFsBtn: $('#elevFsBtn'),
+                elevKpis: $('#elevKpis'), elevHighsInfo: $('#elevHighsInfo'), elevLowsInfo: $('#elevLowsInfo'),
+                elevHighsTable: $('#elevHighsTable'), elevLowsTable: $('#elevLowsTable'),
+                elevRowsTable: $('#elevRowsTable'), elevRowsInfo: $('#elevRowsInfo'),
+
+                // elevator directory
+                elevReload2: $('#elevReload2'), elevFile2: $('#elevFile2'), elevStatus2: $('#elevStatus2'),
+                elevRegionSelect: $('#elevRegionSelect'), elevRegionsBar: $('#elevRegionsBar'),
+                elevSearch: $('#elevSearch'), elevGrid: $('#elevGrid'), elevEmpty: $('#elevEmpty'),
+                elevPeopleMeta: $('#elevPeopleMeta'),
             };
 
             // =================== PRICES ===================
@@ -806,6 +1027,19 @@
                     els.loadStatus.textContent = 'Loaded prices_clean.json ✔';
                 } catch (e) {
                     els.loadStatus.textContent = 'Fetch failed. Load a file manually.';
+                    console.error(e);
+                }
+            }
+            async function fetchKernel() {
+                try {
+                    els.loadStatus.textContent = 'Fetching kernel.json…';
+                    const res = await fetch('kernel.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onData(json);
+                    els.loadStatus.textContent = 'Loaded kernel.json ✔';
+                } catch (e) {
+                    els.loadStatus.textContent = 'Fetch kernel.json failed. Load a file manually.';
                     console.error(e);
                 }
             }
@@ -859,8 +1093,6 @@
                 els.endDate.value = toISO(DATE_MAX);
 
                 els.currency.value = 'UAH';
-                els.agg.value = 'mean';
-                els.showMinMax.checked = true;
 
                 // culture panel
                 buildCulturePanel();
@@ -935,7 +1167,6 @@
                     end: parseISO(els.endDate.value || toISO(DATE_MAX)),
                     selections: Array.from(selected), // strings 'agg::family' | 'leaf::name'
                     company: els.company.value, currency: els.currency.value,
-                    aggMode: els.agg.value, showMinMax: els.showMinMax.checked
                 };
             }
 
@@ -955,12 +1186,9 @@
                 const labels = Array.from(byDate.keys()).sort();
                 const currency = f.currency, val = r => r[currency];
 
-                const outDatasets = [];           // [{label, main[], min[], max[], color}]
-                const allStatsRows = [];          // for tables
-                const palette = [
-                    '#6ea8ff', '#27e1ae', '#f6c14b', '#ff6b6b', '#a78bfa',
-                    '#66d9e8', '#ffd166', '#ef476f', '#4cc9f0', '#b8f7d4'
-                ];
+                const outDatasets = [];
+                const allStatsRows = [];
+                const palette = ['#6ea8ff', '#27e1ae', '#f6c14b', '#ff6b6b', '#a78bfa', '#66d9e8', '#ffd166', '#ef476f', '#4cc9f0', '#b8f7d4'];
 
                 const sels = f.selections.map((s, i) => {
                     const [mode, key] = s.split('::');
@@ -970,58 +1198,54 @@
                 });
 
                 for (const s of sels) {
-                    const main = [], mn = [], mx = [];
+                    const main = [];
                     if (s.mode === 'leaf') {
                         for (const d of labels) {
                             const rows = (byDate.get(d) || []).filter(r => r.commodity === s.key && (!f.company || r.org === f.company));
                             const vals = rows.map(val).filter(v => v != null);
-                            if (f.company) {
-                                const v = vals.length ? vals[0] : null;
-                                main.push(v); mn.push(v); mx.push(v);
-                                if (v != null) allStatsRows.push({ date: rows[0].date, dateStr: d, org: f.company, commodity: s.key, value: v });
-                            } else {
-                                const a = (f.aggMode === 'median') ? median(vals) : mean(vals);
-                                main.push(a);
-                                mn.push(vals.length ? Math.min(...vals) : null);
-                                mx.push(vals.length ? Math.max(...vals) : null);
-                                for (const rr of rows) { const v = val(rr); if (v != null) allStatsRows.push({ ...rr, value: v }); }
+                            const v = vals.length ? mean(vals) : null;
+                            main.push(v);
+                            if (v != null) {
+                                const any = rows[0] || { date: parseISO(d), dateStr: d, org: f.company || '—', commodity: s.key };
+                                allStatsRows.push({ ...any, value: v });
                             }
                         }
-                    } else { // family aggregate per day
+                    } else { // family aggregate per day (mean)
                         for (const d of labels) {
                             const rows = (byDate.get(d) || []).filter(r => r.family === s.key);
                             if (f.company) {
-                                const clsVals = rows.filter(r => r.org === f.company).map(val).filter(v => v != null);
-                                const v = mean(clsVals);
-                                main.push(v ?? null); mn.push(v ?? null); mx.push(v ?? null);
-                                if (v != null) allStatsRows.push({ date: rows[0]?.date || parseISO(d), dateStr: d, org: f.company, commodity: `${s.key} — всі`, value: v });
+                                const v = mean(rows.filter(r => r.org === f.company).map(val).filter(v => v != null));
+                                main.push(Number.isFinite(v) ? v : null);
+                                if (Number.isFinite(v)) {
+                                    const any = rows[0] || { date: parseISO(d), dateStr: d };
+                                    allStatsRows.push({ date: any.date, dateStr: d, org: f.company, commodity: `${s.key} — всі`, value: v });
+                                }
                             } else {
+                                // mean of firm means
                                 const byOrg = groupBy(rows, r => r.org);
                                 const perFirm = [];
                                 for (const [org, arr] of byOrg.entries()) {
                                     const v = mean(arr.map(val).filter(v => v != null));
-                                    if (v != null) { perFirm.push({ org, v }); allStatsRows.push({ date: arr[0].date, dateStr: d, org, commodity: `${s.key} — всі`, value: v }); }
+                                    if (Number.isFinite(v)) {
+                                        perFirm.push({ org, v });
+                                        const any = arr[0] || { date: parseISO(d), dateStr: d };
+                                        allStatsRows.push({ date: any.date, dateStr: d, org, commodity: `${s.key} — всі`, value: v });
+                                    }
                                 }
-                                const vals = perFirm.map(x => x.v);
-                                const a = (f.aggMode === 'median') ? median(vals) : mean(vals);
-                                main.push(vals.length ? a : null);
-                                mn.push(vals.length ? Math.min(...vals) : null);
-                                mx.push(vals.length ? Math.max(...vals) : null);
+                                const v = mean(perFirm.map(x => x.v));
+                                main.push(Number.isFinite(v) ? v : null);
                             }
                         }
                     }
-                    outDatasets.push({ label: s.label, color: s.color, main, mn, mx });
+                    outDatasets.push({ label: s.label, color: s.color, main });
                 }
 
                 return { labels, datasets: outDatasets, statsRows: allStatsRows };
             }
 
-            function computeYBounds(datasets, showMinMax) {
+            function computeYBounds(datasets) {
                 const vals = [];
-                for (const ds of datasets) {
-                    ds.main.forEach(v => Number.isFinite(v) && vals.push(v));
-                    if (showMinMax) { ds.mn.forEach(v => Number.isFinite(v) && vals.push(v)); ds.mx.forEach(v => Number.isFinite(v) && vals.push(v)); }
-                }
+                for (const ds of datasets) { ds.main.forEach(v => Number.isFinite(v) && vals.push(v)); }
                 if (!vals.length) return {};
                 let minV = Math.min(...vals), maxV = Math.max(...vals);
                 if (minV === maxV) {
@@ -1132,32 +1356,18 @@
 
                 // datasets for Chart.js
                 const currencyFmt = (f.currency === 'UAH') ? fmtUAH : fmtUSD;
-                const showMM = f.showMinMax && !f.company;
-                const datasets = [];
-                for (const ds of multi.datasets) {
-                    // min/max (lighter dashed) if applicable
-                    if (showMM) {
-                        datasets.push({
-                            label: `${ds.label} — min`,
-                            data: ds.mn, borderWidth: 1.5, borderColor: ds.color + '80',
-                            borderDash: [6, 4], pointRadius: 0, tension: .25, hidden: true
-                        });
-                        datasets.push({
-                            label: `${ds.label} — max`,
-                            data: ds.mx, borderWidth: 1.5, borderColor: ds.color + '80',
-                            borderDash: [6, 4], pointRadius: 0, tension: .25, hidden: true
-                        });
-                    }
-                    datasets.push({
-                        label: ds.label, data: ds.main, borderWidth: 2.5, borderColor: ds.color, pointRadius: 0, tension: .25
-                    });
-                }
+                const datasets = multi.datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.main,
+                    borderWidth: 2.5,
+                    borderColor: ds.color,
+                    pointRadius: 0,
+                    tension: .25
+                }));
 
                 // bounds
-                const yb = computeYBounds(multi.datasets, showMM);
+                const yb = computeYBounds(multi.datasets);
                 const maxTicks = calcMaxTicks();
-
-                // (re)draw
                 if (chart) chart.destroy();
                 chart = new Chart(els.canvas.getContext('2d'), {
                     type: 'line',
@@ -1178,19 +1388,8 @@
                             }
                         },
                         plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#e6edf3',
-                                    // hide helper entries like “… — min/max” from the legend
-                                    filter: (item/*LegendItem*/, chart) => !/ — (min|max)$/.test(item.text)
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    title: (c) => c[0]?.label || '',
-                                    label: (c) => `${c.dataset.label}: ${currencyFmt(c.parsed.y)}`
-                                }
-                            }
+                            legend: { labels: { color: '#e6edf3' } },
+                            tooltip: { callbacks: { title: (c) => c[0]?.label || '', label: (c) => `${c.dataset.label}: ${currencyFmt(c.parsed.y)}` } }
                         }
                     }
                 });
@@ -1454,6 +1653,384 @@
                 els.peopleGrid.appendChild(frag);
             }
 
+            // =================== ELEVATORS (prices + directory) ===================
+
+            function normalizeElevatorsAll(json) {
+                const rows = [];
+                const infoMap = new Map();
+                const regionsByDate = json || {};
+                for (const [dateKey, regions] of Object.entries(regionsByDate)) {
+                    for (const [regionName, regionObj] of Object.entries(regions || {})) {
+                        const date = parseISO((regionObj && regionObj.date) || dateKey);
+                        for (const ev of (regionObj?.elevators || [])) {
+                            const name = ev.name || '—';
+                            if (!infoMap.has(name)) {
+                                infoMap.set(name, {
+                                    name, region: regionName || '—',
+                                    address: ev.address || '',
+                                    director: ev.director || '',
+                                    phone: ev.phone || '',
+                                    traders: Array.isArray(ev.traders) ? ev.traders.map(t => ({ name: t.name || '', phone: t.phone || '' })) : []
+                                });
+                            }
+                            for (const c of (ev.crops || [])) {
+                                let price = (typeof c.price === 'number') ? c.price : null;
+                                if (price === 0) price = null; // ignore zeros
+                                const commodity = c.name || '—';
+                                rows.push({
+                                    date, dateStr: toISO(date),
+                                    region: regionName || '—',
+                                    elevator: name,
+                                    terminal: c.terminal || '',
+                                    commodity, family: baseFamily(commodity),
+                                    UAH: price
+                                });
+                            }
+                        }
+                    }
+                }
+                rows.sort((a, b) => a.date - b.date);
+                return { rows, info: Array.from(infoMap.values()) };
+            }
+
+            function buildElevLookups() {
+                ELEV_FAMILY = new Map();
+                const eSet = new Set(), tSet = new Set(), rSet = new Set();
+                for (const r of ELEV_ROWS) {
+                    if (!ELEV_FAMILY.has(r.family)) ELEV_FAMILY.set(r.family, new Set());
+                    ELEV_FAMILY.get(r.family).add(r.commodity);
+                    eSet.add(r.elevator);
+                    if (r.terminal) tSet.add(r.terminal);
+                    if (r.region) rSet.add(r.region);
+                }
+                ELEV_ELEVATORS = Array.from(eSet).sort((a, b) => a.localeCompare(b, 'uk'));
+                ELEV_TERMINALS = Array.from(tSet).sort((a, b) => a.localeCompare(b, 'uk'));
+                ELEV_REGIONS = Array.from(rSet).sort((a, b) => a.localeCompare(b, 'uk'));
+            }
+
+            function populateElevSelectors() {
+                // dates
+                els.elevStartDate.min = toISO(ELEV_DATE_MIN); els.elevStartDate.max = toISO(ELEV_DATE_MAX);
+                els.elevEndDate.min = toISO(ELEV_DATE_MIN); els.elevEndDate.max = toISO(ELEV_DATE_MAX);
+                els.elevStartDate.value = toISO(ELEV_DATE_MIN);
+                els.elevEndDate.value = toISO(ELEV_DATE_MAX);
+
+                // chips
+                buildElevChips();
+                buildElevCulturePanel();
+
+                // directory regions
+                els.elevRegionSelect.innerHTML = `<option value="">All regions</option>` +
+                    ELEV_REGIONS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+                els.elevRegionsBar.innerHTML = ELEV_REGIONS.map(r => `<span class="pill clickable${elevRegionSel === r ? ' active' : ''}" data-elev-region="${escapeHtml(r)}">${escapeHtml(r)}</span>`).join(' ');
+
+                syncActivePills(els.elevRegionsBar, 'data-elev-region', elevRegionSel);
+            }
+
+            function buildElevChips() {
+                els.elevElevatorsBar.innerHTML = ELEV_ELEVATORS.map(n =>
+                    `<span class="pill clickable${elevElevSel.has(n) ? ' active' : ''}" data-elv="${escapeHtml(n)}">${escapeHtml(n)}</span>`
+                ).join(' ');
+                els.elevTerminalsBar.innerHTML = ELEV_TERMINALS.length
+                    ? ELEV_TERMINALS.map(n => `<span class="pill clickable${elevTermSel.has(n) ? ' active' : ''}" data-term="${escapeHtml(n)}">${escapeHtml(n)}</span>`).join(' ')
+                    : `<span class="hint">No terminals present in data</span>`;
+            }
+
+            function buildElevCulturePanel() {
+                const families = Array.from(ELEV_FAMILY.keys()).sort((a, b) => a.localeCompare(b, 'uk'));
+                const cols = families.map(fam => {
+                    const leaves = Array.from(ELEV_FAMILY.get(fam)).sort((a, b) => a.localeCompare(b, 'uk'));
+                    const allId = `eagg::${fam}`;
+                    const itemsHtml =
+                        `<div class="chk"><input type="checkbox" id="${allId}" data-mode="agg" data-family="${escapeHtml(fam)}"><label for="${allId}">${escapeHtml(fam)} - всі</label></div>` +
+                        leaves.map(name => {
+                            const id = `eleaf::${name}`;
+                            return `<div class="chk"><input type="checkbox" id="${id}" data-mode="leaf" data-family="${escapeHtml(fam)}" data-name="${escapeHtml(name)}"><label for="${id}">${escapeHtml(name)}</label></div>`;
+                        }).join('');
+                    return `<div class="culture-col"><div class="culture-head">${escapeHtml(fam)}</div>${itemsHtml}</div>`;
+                }).join('');
+                els.elevCultureGrid.innerHTML = cols;
+
+                // restore selection
+                for (const v of elevSelected) { const el = document.getElementById(v); if (el) el.checked = true; }
+
+                els.elevCultureGrid.addEventListener('change', e => {
+                    const input = e.target.closest('input[type="checkbox"]'); if (!input) return;
+                    const mode = input.dataset.mode, fam = input.dataset.family, name = input.dataset.name;
+                    const id = (mode === 'agg') ? `eagg::${fam}` : `eleaf::${name}`;
+                    if (input.checked) {
+                        if (mode === 'agg') {
+                            els.elevCultureGrid.querySelectorAll(`input[data-family="${CSS.escape(fam)}"][data-mode="leaf"]`)
+                                .forEach(x => { x.checked = false; elevSelected.delete(`eleaf::${x.dataset.name}`); });
+                            elevSelected.add(id);
+                        } else {
+                            const aggId = `eagg::${fam}`; const aggEl = document.getElementById(aggId);
+                            if (aggEl) { aggEl.checked = false; elevSelected.delete(aggId); }
+                            elevSelected.add(id);
+                        }
+                    } else {
+                        elevSelected.delete(id);
+                    }
+                    renderElevPrices();
+                });
+            }
+
+            async function fetchElevatorsDefault(statusEl) {
+                try {
+                    if (statusEl) statusEl.textContent = 'Fetching elevators.json…';
+                    const res = await fetch('elevators.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onElevatorsData(json);
+                    if (statusEl) statusEl.textContent = 'Loaded elevators.json ✔';
+                } catch (e) {
+                    if (statusEl) statusEl.textContent = 'elevators.json not found (optional).';
+                    console.warn(e);
+                }
+            }
+            function onElevatorsFile(file, statusEl) {
+                const r = new FileReader();
+                r.onload = () => {
+                    try { onElevatorsData(JSON.parse(r.result)); statusEl.textContent = `Loaded ${file.name} ✔`; }
+                    catch { statusEl.textContent = 'Invalid JSON'; }
+                };
+                r.readAsText(file);
+            }
+            function onElevatorsData(json) {
+                const { rows, info } = normalizeElevatorsAll(json);
+                ELEV_ROWS = rows; ELEV_INFO = info;
+                if (!ELEV_ROWS.length) { if (els.elevStatus) els.elevStatus.textContent = 'No rows'; return; }
+                ELEV_DATE_MIN = ELEV_ROWS[0].date; ELEV_DATE_MAX = ELEV_ROWS[ELEV_ROWS.length - 1].date;
+                buildElevLookups();
+                populateElevSelectors();
+                renderElevPrices();
+                renderElevDirectory();
+            }
+
+            function getElevFilters() {
+                return {
+                    start: parseISO(els.elevStartDate.value || toISO(ELEV_DATE_MIN)),
+                    end: parseISO(els.elevEndDate.value || toISO(ELEV_DATE_MAX)),
+                    selections: Array.from(elevSelected), // 'eagg::family' | 'eleaf::name'
+                    elevators: elevElevSel.size ? Array.from(elevElevSel) : null,
+                    terminals: elevTermSel.size ? Array.from(elevTermSel) : null,
+                };
+            }
+
+            function computeElevMulti(f) {
+                const inRange = ELEV_ROWS.filter(r =>
+                    r.date >= f.start && r.date <= f.end &&
+                    (!f.elevators || f.elevators.includes(r.elevator)) &&
+                    (!f.terminals || f.terminals.includes(r.terminal))
+                );
+                const byDate = groupBy(inRange, r => r.dateStr);
+                const labels = Array.from(byDate.keys()).sort();
+
+                const outDatasets = [], statsRows = [];
+                const palette = ['#6ea8ff', '#27e1ae', '#f6c14b', '#ff6b6b', '#a78bfa', '#66d9e8', '#ffd166', '#ef476f', '#4cc9f0', '#b8f7d4'];
+
+                const sels = f.selections.map((s, i) => {
+                    const [mode, key] = s.split('::'); // eagg / eleaf
+                    const color = palette[i % palette.length];
+                    const label = (mode === 'eagg') ? `${key} — всі` : s.slice('eleaf::'.length);
+                    return { mode, key: (mode === 'eagg' ? key : s.slice('eleaf::'.length)), color, label };
+                });
+
+                for (const s of sels) {
+                    const main = [];
+                    for (const d of labels) {
+                        let rows = (byDate.get(d) || []);
+                        rows = (s.mode === 'eagg') ? rows.filter(r => r.family === s.key) : rows.filter(r => r.commodity === s.key);
+                        const vals = rows.map(r => r.UAH).filter(v => v != null);
+                        const v = vals.length ? mean(vals) : null;
+                        main.push(Number.isFinite(v) ? v : null);
+                        if (Number.isFinite(v)) {
+                            const any = rows[0] || { elevator: '—' };
+                            statsRows.push({ date: parseISO(d), dateStr: d, org: any.elevator, commodity: (s.mode === 'eagg' ? `${s.key} — всі` : s.key), value: v });
+                        }
+                    }
+                    outDatasets.push({ label: s.label, color: s.color, main });
+                }
+                return { labels, datasets: outDatasets, statsRows };
+            }
+
+            function renderElevInfoBar(f) {
+                const sels = f.selections.map(s => {
+                    const [mode, key] = s.split('::');
+                    return (mode === 'eagg') ? `${key} — всі` : key.replace(/^eleaf::/, '');
+                });
+                let html = '';
+                if (!sels.length) {
+                    html = `<strong>Select at least one culture above.</strong>`;
+                } else {
+                    const elevPills = (ELEV_ELEVATORS.length ? ELEV_ELEVATORS : [])
+                        .map(n => `<span class="pill clickable${elevElevSel.has(n) ? ' active' : ''}" data-elv="${escapeHtml(n)}">${escapeHtml(n)}</span>`).join(' ');
+                    const termPills = (ELEV_TERMINALS.length ? ELEV_TERMINALS : [])
+                        .map(n => `<span class="pill clickable${elevTermSel.has(n) ? ' active' : ''}" data-term="${escapeHtml(n)}">${escapeHtml(n)}</span>`).join(' ');
+                    html = `<div style="margin-bottom:6px"><strong>Selected:</strong> ${escapeHtml(sels.join(', '))}</div>
+                        <div style="margin-bottom:4px"><strong>Elevators:</strong> ${elevPills || '—'}</div>
+                        <div><strong>Terminals:</strong> ${termPills || '—'}</div>`;
+                }
+                els.elevInfoBar.style.display = '';
+                els.elevInfoContent.innerHTML = html;
+            }
+
+            function renderElevPrices() {
+                if (els.tabElevPrices.hasAttribute('hidden')) return;
+                if (!ELEV_ROWS.length) { els.elevSliceStatus.textContent = '0 observations'; return; }
+
+                const f = getElevFilters();
+                const multi = computeElevMulti(f);
+                renderElevInfoBar(f);
+
+                const currencyFmt = fmtUAH;
+                const datasets = multi.datasets.map(ds => ({
+                    label: ds.label, data: ds.main, borderWidth: 2.5, borderColor: ds.color, pointRadius: 0, tension: .25
+                }));
+                const yb = computeYBounds(multi.datasets);
+                const maxTicks = calcMaxTicks();
+
+                if (elevChart) elevChart.destroy();
+                elevChart = new Chart(els.elevChart.getContext('2d'), {
+                    type: 'line',
+                    data: { labels: multi.labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, spanGaps: true,
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#a9b2be', maxRotation: 0, minRotation: 0, autoSkip: true, autoSkipPadding: 12, maxTicksLimit: maxTicks,
+                                    callback: (_, idx) => formatTickLabel(multi.labels[idx], maxTicks)
+                                }, grid: { color: 'rgba(37,48,58,0.5)' }
+                            },
+                            y: { ticks: { color: '#a9b2be', callback: (v) => currencyFmt(v) }, grid: { color: 'rgba(37,48,58,0.5)' }, ...yb }
+                        },
+                        plugins: { legend: { labels: { color: '#e6edf3' } }, tooltip: { callbacks: { title: (c) => c[0]?.label || '', label: (c) => `${c.dataset.label}: ${currencyFmt(c.parsed.y)}` } } }
+                    }
+                });
+
+                els.elevSliceStatus.textContent = `${multi.statsRows.length} observations`;
+
+                const stats = computeStats(multi.statsRows);
+                const items = [];
+                items.push(kpi('Observations', String(multi.statsRows.length || 0)));
+                if (stats) {
+                    items.push(kpi('Min', currencyFmt(stats.minVal), 'bad', `${fmtDate(stats.minRow.date)} • ${stats.minRow.org}`));
+                    items.push(kpi('Max', currencyFmt(stats.maxVal), 'good', `${fmtDate(stats.maxRow.date)} • ${stats.maxRow.org}`));
+                    items.push(kpi('Mean', currencyFmt(stats.avgVal)));
+                    items.push(kpi('Median', currencyFmt(stats.medVal)));
+                    items.push(kpi('StDev', currencyFmt(stats.sdVal), 'warn'));
+                    items.push(kpi('CoV', `${stats.cov.toFixed(1)}%`));
+                }
+                els.elevKpis.innerHTML = items.join('');
+
+                const { highs, lows } = highsLows(multi.statsRows, 10);
+                els.elevHighsInfo.textContent = `${highs.length} records`;
+                els.elevLowsInfo.textContent = `${lows.length} records`;
+                renderTable(els.elevHighsTable, ['Date', 'Elevator', 'Commodity', 'Price'], highs.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                renderTable(els.elevLowsTable, ['Date', 'Elevator', 'Commodity', 'Price'], lows.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                renderTable(els.elevRowsTable, ['Date (local)', 'ISO', 'Elevator', 'Commodity', 'Value'], multi.statsRows.map(r => [fmtDate(r.date), r.dateStr, r.org, r.commodity, currencyFmt(r.value)]));
+            }
+
+            function filteredElevators() {
+                let arr = ELEV_INFO.slice();
+                if (elevRegionSel) arr = arr.filter(x => x.region === elevRegionSel);
+                if (elevSearchSel) {
+                    const q = elevSearchSel.toLowerCase();
+                    arr = arr.filter(x =>
+                        (x.name || '').toLowerCase().includes(q) ||
+                        (x.region || '').toLowerCase().includes(q) ||
+                        (x.director || '').toLowerCase().includes(q) ||
+                        (x.address || '').toLowerCase().includes(q) ||
+                        (x.phone || '').toLowerCase().includes(q) ||
+                        (x.traders || []).some(t => (t.name || '').toLowerCase().includes(q) || (t.phone || '').toLowerCase().includes(q))
+                    );
+                }
+                return arr;
+            }
+
+            function renderElevDirectory() {
+                if (els.tabElevInfo.hasAttribute('hidden')) return;
+                els.elevGrid.innerHTML = '';
+                const list = filteredElevators();
+                els.elevPeopleMeta.textContent = `${list.length} elevator(s)` + (elevRegionSel ? ` • ${elevRegionSel}` : '');
+                if (!list.length) { els.elevEmpty.style.display = ''; return; }
+                els.elevEmpty.style.display = 'none';
+
+                const frag = document.createDocumentFragment();
+                for (const e of list) {
+                    const card = document.createElement('div'); card.className = 'elevCard';
+                    const title = document.createElement('div'); title.className = 'title'; title.textContent = e.name;
+                    const r = document.createElement('div'); r.className = 'line'; r.style.color = 'var(--sub)'; r.textContent = e.region;
+                    const addr = document.createElement('div'); addr.className = 'line';
+                    if (e.address) {
+                        const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' +
+                            encodeURIComponent((e.address || '') + (e.region ? ', ' + e.region : ''));
+                        const a = document.createElement('a');
+                        a.href = mapsUrl;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+                        a.textContent = e.address;
+                        addr.appendChild(a);
+                    } else {
+                        addr.textContent = '—';
+                    }
+                    const dir = document.createElement('div'); dir.className = 'line'; dir.textContent = e.director ? `Директор: ${e.director || e.director}` : '';
+                    const ph = document.createElement('div'); ph.className = 'line';
+                    if (e.phone) { const a = document.createElement('a'); a.href = `tel:${e.phone.replace(/\s+/g, '')}`; a.textContent = e.phone; ph.appendChild(a); }
+                    const tr = document.createElement('div'); tr.className = 'line';
+                    if (e.traders?.length) {
+                        tr.innerHTML = 'Трейдери: ' + e.traders.map(t => `${escapeHtml(t.name)}${t.phone ? ' — <a href="tel:' + t.phone.replace(/\s+/g, '') + '">' + escapeHtml(t.phone) + '</a>' : ''}`).join(', ');
+                    }
+                    card.appendChild(title); card.appendChild(r); card.appendChild(addr); if (dir.textContent) card.appendChild(dir); if (ph.childNodes.length) card.appendChild(ph); if (tr.innerHTML) card.appendChild(tr);
+                    frag.appendChild(card);
+                }
+                els.elevGrid.appendChild(frag);
+            }
+
+            function exportElevCsv() {
+                const f = getElevFilters();
+                const { statsRows } = computeElevMulti(f);
+                if (!statsRows.length) return;
+                const rows = [['date_local', 'date_iso', 'elevator', 'commodity', 'value', 'currency']];
+                for (const r of statsRows) { rows.push([fmtDate(r.date), r.dateStr, r.org, r.commodity, r.value, 'UAH']); }
+                const csv = rows.map(r => r.map(v => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'elevator_prices.csv'; document.body.appendChild(a); a.click();
+                setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+            }
+
+            function wireFsFor(wrap, btn, rerender) {
+                const inFs = () => (document.fullscreenElement === wrap || document.webkitFullscreenElement === wrap || wrap.classList.contains('pseudoFS'));
+                const update = () => { btn.textContent = inFs() ? '⤡' : '⤢'; btn.title = inFs() ? 'Exit fullscreen' : 'Enter fullscreen'; };
+                async function enter() {
+                    try {
+                        if (wrap.requestFullscreen) await wrap.requestFullscreen({ navigationUI: 'hide' });
+                        else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+                        else throw new Error('no fs');
+                    } catch (e) { wrap.classList.add('pseudoFS'); rerender(); update(); }
+                }
+                async function exit() {
+                    try {
+                        if (document.exitFullscreen) await document.exitFullscreen();
+                        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                        else throw new Error('no exit');
+                    } catch (e) { wrap.classList.remove('pseudoFS'); rerender(); update(); }
+                }
+                btn.addEventListener('click', () => { inFs() ? exit() : enter(); });
+                ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => { update(); rerender(); }));
+                window.addEventListener('resize', () => { setTimeout(rerender, 120); });
+                update();
+            }
+
+            function syncActivePills(container, dataAttr, selectedValue) {
+                const sel = `.pill.clickable[${dataAttr}]`;
+                container.querySelectorAll(sel).forEach(el => {
+                    const v = el.getAttribute(dataAttr);
+                    el.classList.toggle('active', !!selectedValue && v === selectedValue);
+                });
+            }
+
             // =================== Events & Wiring ===================
 
             // Tabs
@@ -1462,23 +2039,25 @@
                     els.tabBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     const tab = btn.dataset.tab;
-                    if (tab === 'prices') {
-                        els.tabContacts.hidden = true;
-                        els.tabPrices.hidden = false;
-                        scheduleRerender(); // ensure chart renders correctly when shown
-                    } else {
-                        els.tabPrices.hidden = true;
-                        els.tabContacts.hidden = false;
-                    }
+
+                    els.tabPrices.hidden = tab !== 'prices';
+                    els.tabContacts.hidden = tab !== 'contacts';
+                    els.tabElevPrices.hidden = tab !== 'elev-prices';
+                    els.tabElevInfo.hidden = tab !== 'elev-info';
+
+                    if (tab === 'prices') scheduleRerender();
+                    if (tab === 'elev-prices') renderElevPrices();
+                    if (tab === 'elev-info') renderElevDirectory();
                 });
             });
 
             // Prices events
             els.reload.addEventListener('click', fetchDefault);
+            els.reloadKernel.addEventListener('click', fetchKernel);
             els.fileInput.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onFileChosen(f); });
             els.apply.addEventListener('click', render);
             els.reset.addEventListener('click', () => {
-                els.company.value = ''; els.currency.value = 'UAH'; els.agg.value = 'mean'; els.showMinMax.checked = true;
+                els.company.value = ''; els.currency.value = 'UAH';
                 els.startDate.value = toISO(DATE_MIN); els.endDate.value = toISO(DATE_MAX);
                 selected.clear();
                 buildCulturePanel();
@@ -1496,8 +2075,6 @@
                 els.currency.addEventListener(ev, render);
                 els.startDate.addEventListener(ev, render);
                 els.endDate.addEventListener(ev, render);
-                els.agg.addEventListener(ev, render);
-                els.showMinMax.addEventListener(ev, render);
             });
 
             // sellers chips toggle
@@ -1509,7 +2086,7 @@
                 render();
             });
 
-            // Fullscreen controls
+            // Fullscreen controls for prices chart
             els.fsBtn.addEventListener('click', () => { inFullscreen() ? exitFs() : enterFs(); });
             document.addEventListener('fullscreenchange', onFsChange);
             document.addEventListener('webkitfullscreenchange', onFsChange);
@@ -1537,11 +2114,74 @@
             });
             els.contactSearch.addEventListener('input', e => { searchSel = e.target.value.trim(); renderContacts(); });
 
+            // Elevator prices events
+            els.elevReload.addEventListener('click', () => fetchElevatorsDefault(els.elevStatus));
+            els.elevFile.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onElevatorsFile(f, els.elevStatus); });
+            els.elevApply.addEventListener('click', renderElevPrices);
+            els.elevReset.addEventListener('click', () => {
+                elevSelected.clear(); elevElevSel.clear(); elevTermSel.clear();
+                if (ELEV_DATE_MIN && ELEV_DATE_MAX) { els.elevStartDate.value = toISO(ELEV_DATE_MIN); els.elevEndDate.value = toISO(ELEV_DATE_MAX); }
+                buildElevChips(); buildElevCulturePanel(); renderElevPrices();
+            });
+            els.elevSelectNone.addEventListener('click', () => {
+                elevSelected.clear(); els.elevCultureGrid.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
+                renderElevPrices();
+            });
+            els.elevExportCsv.addEventListener('click', exportElevCsv);
+
+            // Chips toggling
+            els.elevElevatorsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-elv]'); if (!t) return;
+                const name = t.getAttribute('data-elv'); elevElevSel.has(name) ? elevElevSel.delete(name) : elevElevSel.add(name);
+                buildElevChips(); renderElevPrices();
+            });
+            els.elevTerminalsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-term]'); if (!t) return;
+                const name = t.getAttribute('data-term'); elevTermSel.has(name) ? elevTermSel.delete(name) : elevTermSel.add(name);
+                buildElevChips(); renderElevPrices();
+            });
+
+            // Info bar toggles too
+            els.elevInfoBar.addEventListener('click', e => {
+                const el = e.target.closest('.pill.clickable[data-elv]'); const tm = e.target.closest('.pill.clickable[data-term]');
+                if (el) { const n = el.getAttribute('data-elv'); elevElevSel.has(n) ? elevElevSel.delete(n) : elevElevSel.add(n); buildElevChips(); renderElevPrices(); }
+                if (tm) { const n = tm.getAttribute('data-term'); elevTermSel.has(n) ? elevTermSel.delete(n) : elevTermSel.add(n); buildElevChips(); renderElevPrices(); }
+            });
+
+            // Elevator chart fullscreen
+            wireFsFor(els.elevChartWrap, els.elevFsBtn, renderElevPrices);
+
+            // Date changes
+            ['change'].forEach(ev => {
+                els.elevStartDate.addEventListener(ev, renderElevPrices);
+                els.elevEndDate.addEventListener(ev, renderElevPrices);
+            });
+
+            // Directory events (share data)
+            els.elevReload2.addEventListener('click', () => fetchElevatorsDefault(els.elevStatus2));
+            els.elevFile2.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onElevatorsFile(f, els.elevStatus2); });
+            els.elevRegionSelect.addEventListener('change', e => {
+                elevRegionSel = e.target.value || '';
+                syncActivePills(els.elevRegionsBar, 'data-elev-region', elevRegionSel);
+                renderElevDirectory();
+            });
+            els.elevRegionsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-elev-region]'); if (!t) return;
+                const r = t.getAttribute('data-elev-region');
+                elevRegionSel = (elevRegionSel === r) ? '' : r;
+                els.elevRegionSelect.value = elevRegionSel;
+                syncActivePills(els.elevRegionsBar, 'data-elev-region', elevRegionSel);
+                renderElevDirectory();
+            });
+            els.elevSearch.addEventListener('input', e => { elevSearchSel = e.target.value.trim(); renderElevDirectory(); });
+
             // Start
             fetchDefault();            // prices
             // Try to load both contact datasets by default; ignore missing optional file.
             fetchContactsDefault();
             fetchContactsSales();
+            // Try to load elevators.json if present
+            fetchElevatorsDefault();
         })();
     </script>
 </body>
