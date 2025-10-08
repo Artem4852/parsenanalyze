@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Prices Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0b0d10;
+            --panel: #12161b;
+            --muted: #1a2027;
+            --text: #e6edf3;
+            --sub: #a9b2be;
+            --accent: #6ea8ff;
+            --ok: #36c275;
+            --bad: #ff6b6b;
+            --warn: #f6c14b;
+            --border: #25303a;
+            --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans"
+        }
+
+        header {
+            padding: 18px 22px;
+            background: linear-gradient(180deg, #0d1117 0%, #0b0d10 100%);
+            border-bottom: 1px solid var(--border)
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: .3px
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 18px 22px 40px
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0 18px
+        }
+
+        .tab {
+            background: var(--panel);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            border-color: #6ea8ff;
+            box-shadow: 0 0 0 2px rgba(110, 168, 255, .25) inset
+        }
+
+        section[hidden] {
+            display: none !important
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow)
+        }
+
+        .controls {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(12, 1fr);
+            padding: 16px
+        }
+
+        .controls .field {
+            grid-column: span 3;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .controls .field.wide {
+            grid-column: span 6
+        }
+
+        label {
+            font-size: 12px;
+            color: var(--sub);
+            letter-spacing: .3px
+        }
+
+        select,
+        input[type="date"],
+        input[type="search"] {
+            background: var(--muted);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            outline: none
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            background: var(--accent);
+            color: #0b0d10;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            cursor: pointer
+        }
+
+        .btn.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border)
+        }
+
+        .status {
+            color: var(--sub);
+            font-size: 12px
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(12, 1fr)
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow)
+        }
+
+        .card h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: var(--sub)
+        }
+
+        .kpis {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(6, 1fr)
+        }
+
+        .kpi {
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            min-height: 84px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center
+        }
+
+        .kpi .label {
+            font-size: 11px;
+            color: var(--sub)
+        }
+
+        .kpi .value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 6px
+        }
+
+        .kpi.good .value {
+            color: var(--ok)
+        }
+
+        .kpi.bad .value {
+            color: var(--bad)
+        }
+
+        .kpi.warn .value {
+            color: var(--warn)
+        }
+
+        .col-12 {
+            grid-column: span 12
+        }
+
+        .col-6 {
+            grid-column: span 6
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px
+        }
+
+        .table th,
+        .table td {
+            border-bottom: 1px solid var(--border);
+            padding: 10px 8px;
+            text-align: left;
+            white-space: nowrap
+        }
+
+        .table th {
+            color: var(--sub);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            background: var(--panel)
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+            color: var(--sub)
+        }
+
+        .pill.clickable {
+            cursor: pointer;
+            user-select: none
+        }
+
+        .pill.clickable:hover {
+            background: rgba(255, 255, 255, .04);
+            border-color: #3a4652
+        }
+
+        .pill.active {
+            background: rgba(110, 168, 255, .12);
+            border-color: #6ea8ff;
+            color: #cfe1ff
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--sub);
+            margin-top: 6px
+        }
+
+        /* Chart */
+        .chartWrap {
+            height: clamp(260px, 45vh, 480px);
+            position: relative
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%
+        }
+
+        .chartFsBtn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 3;
+            background: rgba(0, 0, 0, .35);
+            color: #cfe1ff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 6px 10px;
+            cursor: pointer;
+            backdrop-filter: blur(2px);
+        }
+
+        .chartFsBtn:hover {
+            background: rgba(255, 255, 255, .08);
+            border-color: #3a4652
+        }
+
+        #chartWrap:fullscreen {
+            width: 100vw;
+            height: 100vh
+        }
+
+        #chartWrap:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh
+        }
+
+        .chartWrap.pseudoFS {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: var(--bg);
+        }
+
+        /* Contacts tab */
+        .regionsBar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .peopleGrid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(12, 1fr)
+        }
+
+        .person {
+            grid-column: span 6;
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start
+        }
+
+        .person .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #0e1116;
+            border: 1px solid var(--border);
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #9fb8ff
+        }
+
+        .person .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        .person .meta {
+            min-width: 0
+        }
+
+        .person .name {
+            font-weight: 700;
+            font-size: 15px
+        }
+
+        .person .role {
+            font-size: 12px;
+            color: var(--sub);
+            margin-top: 2px
+        }
+
+        .person .line {
+            font-size: 13px;
+            margin-top: 6px
+        }
+
+        .person a {
+            color: #cfe1ff;
+            text-decoration: none
+        }
+
+        .peopleEmpty {
+            padding: 16px;
+            color: var(--sub)
+        }
+
+        @media (max-width:560px) {
+            .person {
+                grid-column: span 12
+            }
+        }
+
+        @media (max-width:980px) {
+            .controls .field {
+                grid-column: span 6
+            }
+
+            .kpis {
+                grid-template-columns: repeat(3, 1fr)
+            }
+
+            .col-6 {
+                grid-column: span 12
+            }
+        }
+
+        /* ===== Multi-culture selector ===== */
+        .culture-panel {
+            padding: 16px;
+            border-top: 1px dashed var(--border)
+        }
+
+        .culture-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(3, 1fr)
+        }
+
+        .culture-col {
+            padding-right: 20px;
+            border-right: 1px solid var(--border)
+        }
+
+        .culture-col:last-child {
+            border-right: none;
+            padding-right: 0
+        }
+
+        .culture-head {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--sub);
+            letter-spacing: .4px;
+            text-transform: uppercase;
+            margin: 2px 0 8px;
+        }
+
+        .chk {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0
+        }
+
+        .chk input {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: var(--muted);
+            border: 1px solid var(--border);
+            display: inline-grid;
+            place-content: center;
+            cursor: pointer;
+            transition: border-color .15s ease, background-color .15s ease;
+        }
+
+        .chk input::after {
+            content: "";
+            width: 12px;
+            height: 12px;
+            border-radius: 6px;
+            background: var(--accent);
+            transform: scale(0);
+            transition: transform .12s ease-out;
+        }
+
+        .chk input:hover {
+            border-color: #3a4652
+        }
+
+        .chk input:focus-visible {
+            outline: 2px solid rgba(110, 168, 255, .35);
+            outline-offset: 2px
+        }
+
+        .chk input:checked {
+            background: var(--muted);
+            border-color: #6ea8ff
+        }
+
+        .chk input:checked::after {
+            transform: scale(1)
+        }
+
+        .chk label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.2
+        }
+
+        @media (max-width:1000px) {
+            .culture-grid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+        }
+
+        @media (max-width:640px) {
+            .culture-grid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        /* ===== Elevators ===== */
+        .elevGrid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(12, 1fr)
+        }
+
+        .elevCard {
+            grid-column: span 6;
+            background: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: var(--shadow)
+        }
+
+        .elevCard .title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 6px
+        }
+
+        .elevCard .line {
+            font-size: 13px;
+            margin-top: 4px
+        }
+
+        .elevCard a {
+            color: var(--accent);
+        }
+
+        @media (max-width:560px) {
+            .elevCard {
+                grid-column: span 12
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Prices Explorer</h1>
+    </header>
+
+    <div class="wrap">
+        <nav class="tabs">
+            <button class="tab active" data-tab="prices">Prices</button>
+            <button class="tab" data-tab="contacts">Contacts</button>
+            <button class="tab" data-tab="elev-prices">Elevator prices</button>
+            <button class="tab" data-tab="elev-info">Elevators</button>
+        </nav>
+
+        <!-- =================== PRICES TAB =================== -->
+        <section id="tab-prices">
+            <div class="panel">
+                <div class="controls">
+                    <div class="field">
+                        <label>Load data</label>
+                        <div class="row">
+                            <button id="reload" class="btn">Fetch prices_clean.json</button>
+                            <button id="reloadKernel" class="btn">Fetch kernel.json</button>
+                            <input id="fileInput" type="file" accept=".json" />
+                            <span id="loadStatus" class="status">Waiting…</span>
+                        </div>
+                        <div class="hint">Load the default file or choose a JSON file.</div>
+                    </div>
+
+                    <div class="field">
+                        <label>Company</label>
+                        <select id="company">
+                            <option value="">All companies</option>
+                        </select>
+                    </div>
+
+                    <!-- <div class="field">
+                        <label>Aggregation when company = all</label>
+                        <select id="agg">
+                            <option value="mean">Mean</option>
+                            <option value="median">Median</option>
+                        </select>
+                    </div> -->
+
+                    <div class="field">
+                        <label>Start date</label>
+                        <input id="startDate" type="date" />
+                    </div>
+
+                    <div class="field">
+                        <label>End date</label>
+                        <input id="endDate" type="date" />
+                    </div>
+
+                    <div class="field">
+                        <label>Currency</label>
+                        <select id="currency">
+                            <option value="UAH">UAH</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+
+                    <!-- <div class="field">
+                        <label>Options</label>
+                        <div class="row">
+                            <label class="switch"><input id="showMinMax" type="checkbox" checked /> show min/max
+                                lines</label>
+                        </div>
+                    </div> -->
+
+                    <div class="field wide">
+                        <label>&nbsp;</label>
+                        <div class="row">
+                            <button id="apply" class="btn">Apply filters</button>
+                            <button id="reset" class="btn secondary">Reset</button>
+                            <button id="exportCsv" class="btn secondary">Export filtered CSV</button>
+                            <span id="sliceStatus" class="status"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-selection of cultures -->
+                <div class="culture-panel">
+                    <div class="row" style="justify-content:space-between;align-items:center">
+                        <h3 style="margin:0;color:var(--sub)">Select cultures (multiple)</h3>
+                        <div class="row">
+                            <button id="selectNone" class="btn secondary">Clear all</button>
+                        </div>
+                    </div>
+                    <div id="cultureGrid" class="culture-grid"></div>
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:16px">
+                <!-- Info bar always visible -->
+                <div class="card col-12" id="infoBar" style="display:none">
+                    <div id="infoContent"></div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card col-12 chartCard">
+                    <h3>Chart</h3>
+                    <div class="chartWrap" id="chartWrap">
+                        <button id="fsBtn" class="chartFsBtn" title="Enter fullscreen"
+                            aria-label="Enter fullscreen">⤢</button>
+                        <canvas id="chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3>Summary</h3>
+                    <div class="kpis" id="kpis"></div>
+                    <div id="fxNote" class="hint" style="margin-top:8px; display:none"></div>
+                </div>
+
+                <div class="card col-6">
+                    <h3>Top Highs</h3>
+                    <div class="pill" id="highsInfo"></div>
+                    <div style="overflow:auto; max-height:340px; margin-top:8px">
+                        <table class="table" id="highsTable"></table>
+                    </div>
+                </div>
+
+                <div class="card col-6">
+                    <h3>Top Lows</h3>
+                    <div class="pill" id="lowsInfo"></div>
+                    <div style="overflow:auto; max-height:340px; margin-top:8px">
+                        <table class="table" id="lowsTable"></table>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3>Filtered rows</h3>
+                    <div class="pill" id="rowsInfo"></div>
+                    <div style="overflow:auto; max-height:420px; margin-top:8px">
+                        <table class="table" id="rowsTable"></table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== CONTACTS TAB =================== -->
+        <section id="tab-contacts" hidden>
+            <div class="panel">
+                <div class="controls">
+                    <div class="field">
+                        <label>Load contacts</label>
+                        <div class="row">
+                            <button id="contactsReload" class="btn">Fetch contacts.json</button>
+                            <button id="contactsSalesReload" class="btn">Fetch contacts_sales.json</button>
+                            <input id="contactsFile" type="file" accept=".json" />
+                            <span id="contactsStatus" class="status">Waiting…</span>
+                        </div>
+                        <div class="hint">Load the default file(s) or choose your contacts JSON.</div>
+                    </div>
+
+                    <div class="field">
+                        <label>Region (group)</label>
+                        <select id="regionSelect">
+                            <option value="">All regions</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Category</label>
+                        <select id="categorySelect">
+                            <option value="">All categories</option>
+                            <option value="distribution">Менеджери з Дистрибуції</option>
+                            <option value="procurement">Менеджери із закупівлі</option>
+                        </select>
+                    </div>
+
+                    <div class="field wide">
+                        <label>Search</label>
+                        <input id="contactSearch" type="search" placeholder="Name, role, email, phone…" />
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12">
+                        <label>Categories</label>
+                        <div class="regionsBar" id="categoriesBar"></div>
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12">
+                        <label>Quick switch</label>
+                        <div class="regionsBar" id="regionsBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:16px">
+                <div class="card col-12">
+                    <h3>Contacts</h3>
+                    <div id="peopleMeta" class="hint" style="margin-bottom:8px"></div>
+                    <div class="peopleGrid" id="peopleGrid"></div>
+                    <div class="peopleEmpty" id="peopleEmpty" style="display:none">No matches.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== ELEVATOR PRICES TAB =================== -->
+        <section id="tab-elev-prices" hidden>
+            <div class="panel">
+                <div class="controls">
+                    <div class="field">
+                        <label>Load elevators</label>
+                        <div class="row">
+                            <button id="elevReload" class="btn">Fetch elevators.json</button>
+                            <input id="elevFile" type="file" accept=".json" />
+                            <span id="elevStatus" class="status">Waiting…</span>
+                        </div>
+                        <div class="hint">Load the default file or choose a JSON file.</div>
+                    </div>
+
+                    <div class="field">
+                        <label>Start date</label>
+                        <input id="elevStartDate" type="date" />
+                    </div>
+
+                    <div class="field">
+                        <label>End date</label>
+                        <input id="elevEndDate" type="date" />
+                    </div>
+
+                    <div class="field wide">
+                        <label>&nbsp;</label>
+                        <div class="row">
+                            <button id="elevApply" class="btn">Apply filters</button>
+                            <button id="elevReset" class="btn secondary">Reset</button>
+                            <button id="elevExportCsv" class="btn secondary">Export filtered CSV</button>
+                            <span id="elevSliceStatus" class="status"></span>
+                        </div>
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12; display: none">
+                        <label>Elevators (multi)</label>
+                        <div class="regionsBar" id="elevElevatorsBar"></div>
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12; display: none">
+                        <label>Terminals (multi)</label>
+                        <div class="regionsBar" id="elevTerminalsBar"></div>
+                    </div>
+                </div>
+
+                <!-- Multi-selection of cultures for elevators -->
+                <div class="culture-panel">
+                    <div class="row" style="justify-content:space-between;align-items:center">
+                        <h3 style="margin:0;color:var(--sub)">Select cultures (multiple)</h3>
+                        <div class="row">
+                            <button id="elevSelectNone" class="btn secondary">Clear all</button>
+                        </div>
+                    </div>
+                    <div id="elevCultureGrid" class="culture-grid"></div>
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:16px">
+                <div class="card col-12" id="elevInfoBar" style="display:none">
+                    <div id="elevInfoContent"></div>
+                </div>
+
+                <div class="card col-12 chartCard">
+                    <h3>Chart</h3>
+                    <div class="chartWrap" id="elevChartWrap">
+                        <button id="elevFsBtn" class="chartFsBtn" title="Enter fullscreen"
+                            aria-label="Enter fullscreen">⤢</button>
+                        <canvas id="elevChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3>Summary</h3>
+                    <div class="kpis" id="elevKpis"></div>
+                </div>
+
+                <div class="card col-6">
+                    <h3>Top Highs</h3>
+                    <div class="pill" id="elevHighsInfo"></div>
+                    <div style="overflow:auto; max-height:340px; margin-top:8px">
+                        <table class="table" id="elevHighsTable"></table>
+                    </div>
+                </div>
+
+                <div class="card col-6">
+                    <h3>Top Lows</h3>
+                    <div class="pill" id="elevLowsInfo"></div>
+                    <div style="overflow:auto; max-height:340px; margin-top:8px">
+                        <table class="table" id="elevLowsTable"></table>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3>Filtered rows</h3>
+                    <div class="pill" id="elevRowsInfo"></div>
+                    <div style="overflow:auto; max-height:420px; margin-top:8px">
+                        <table class="table" id="elevRowsTable"></table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== ELEVATORS DIRECTORY TAB =================== -->
+        <section id="tab-elev-info" hidden>
+            <div class="panel">
+                <div class="controls">
+                    <div class="field">
+                        <label>Load elevators</label>
+                        <div class="row">
+                            <button id="elevReload2" class="btn">Fetch elevators.json</button>
+                            <input id="elevFile2" type="file" accept=".json" />
+                            <span id="elevStatus2" class="status">Waiting…</span>
+                        </div>
+                        <div class="hint">Load the default file or choose a JSON file.</div>
+                    </div>
+
+                    <div class="field">
+                        <label>Region</label>
+                        <select id="elevRegionSelect">
+                            <option value="">All regions</option>
+                        </select>
+                    </div>
+
+                    <div class="field wide">
+                        <label>Search</label>
+                        <input id="elevSearch" type="search" placeholder="Name, region, director, trader…" />
+                    </div>
+
+                    <div class="field col-12" style="grid-column:span 12">
+                        <label>Quick switch</label>
+                        <div class="regionsBar" id="elevRegionsBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:16px">
+                <div class="card col-12">
+                    <h3>Elevators</h3>
+                    <div id="elevPeopleMeta" class="hint" style="margin-bottom:8px"></div>
+                    <div class="elevGrid" id="elevGrid"></div>
+                    <div class="peopleEmpty" id="elevEmpty" style="display:none">No matches.</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        (function () {
+            // ---------- Utilities ----------
+            const $ = sel => document.querySelector(sel);
+            const fmtDate = d => new Intl.DateTimeFormat('uk-UA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            const fmtUAH = n => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(n);
+            const fmtUSD = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
+            const toISO = d => d.toISOString().slice(0, 10);
+            const parseISO = s => new Date(s + "T00:00:00Z");
+            const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+            const median = a => { if (!a.length) return null; const b = [...a].sort((x, y) => x - y); const m = Math.floor(b.length / 2); return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+            const stdev = a => { if (a.length < 2) return 0; const m = mean(a); const v = a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length - 1); return Math.sqrt(v); };
+            const escapeHtml = s => String(s).replace(/[&<>"'`]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' }[c]));
+            const initials = name => String(name || '').trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+
+            // Dynamic x-axis ticks (prevent overlap on phones)
+            function calcMaxTicks() {
+                const w = els.chartWrap?.clientWidth || window.innerWidth || 360;
+                return Math.max(3, Math.floor(w / 70));
+            }
+            function formatTickLabel(iso, maxTicks) {
+                const d = new Date(iso + 'T00:00:00Z');
+                if (maxTicks <= 4) return String(d.getUTCFullYear());
+                if (maxTicks <= 8) return d.toLocaleDateString('uk-UA', { year: '4-digit', month: '2-digit' });
+                return d.toLocaleDateString('uk-UA', { year: '2-digit', month: '2-digit', day: '2-digit' });
+            }
+
+            // ---------- Global State ----------
+            let ROWS = [];
+            let DATE_MIN = null, DATE_MAX = null;
+            let FAMILY_MAP = new Map();
+            let COMPANIES = [];
+            let chart = null;
+
+            // Multi-select state
+            const selected = new Set(); // values like 'agg::Пшениця' or 'leaf::Пшениця 3 клас'
+
+            // Contacts state
+            let CONTACTS = []; let REGIONS = []; let regionSel = ''; let searchSel = '';
+            const PRIMARY_REGION = 'Головний офіс';
+            const CATEGORY = { distribution: 'Менеджери з Дистрибуції', procurement: 'Менеджери із закупівлі' };
+            let categorySel = '';
+
+            // ---------- Elevator data state ----------
+            let ELEV_ROWS = [];
+            let ELEV_INFO = []; // directory cards
+            let ELEV_DATE_MIN = null, ELEV_DATE_MAX = null;
+            let ELEV_FAMILY = new Map();
+            let ELEV_ELEVATORS = [];
+            let ELEV_TERMINALS = [];
+            const elevSelected = new Set();       // 'eagg::family' | 'eleaf::crop'
+            const elevElevSel = new Set();        // chosen elevators (empty = all)
+            const elevTermSel = new Set();        // chosen terminals (empty = all)
+            let elevChart = null;
+            let ELEV_REGIONS = [];
+            let elevRegionSel = '';
+            let elevSearchSel = '';
+
+            // ---------- Element refs ----------
+            const els = {
+                // tabs
+                tabBtns: document.querySelectorAll('.tab'),
+                tabPrices: $('#tab-prices'),
+                tabContacts: $('#tab-contacts'),
+                tabElevPrices: document.querySelector('#tab-elev-prices'),
+                tabElevInfo: document.querySelector('#tab-elev-info'),
+
+                // prices
+                reload: $('#reload'), reloadKernel: $('#reloadKernel'), fileInput: $('#fileInput'), loadStatus: $('#loadStatus'),
+                company: $('#company'), currency: $('#currency'),
+                startDate: $('#startDate'), endDate: $('#endDate'), agg: $('#agg'),
+                showMinMax: $('#showMinMax'), apply: $('#apply'), reset: $('#reset'),
+                exportCsv: $('#exportCsv'), sliceStatus: $('#sliceStatus'),
+                kpis: $('#kpis'), fxNote: $('#fxNote'),
+                infoBar: $('#infoBar'), infoContent: $('#infoContent'),
+                highsInfo: $('#highsInfo'), lowsInfo: $('#lowsInfo'),
+                highsTable: $('#highsTable'), lowsTable: $('#lowsTable'),
+                rowsTable: $('#rowsTable'), rowsInfo: $('#rowsInfo'),
+                canvas: $('#chart'), chartWrap: $('#chartWrap'), fsBtn: $('#fsBtn'),
+                cultureGrid: $('#cultureGrid'), selectNone: $('#selectNone'),
+
+                // contacts
+                contactsReload: $('#contactsReload'), contactsSalesReload: $('#contactsSalesReload'),
+                contactsFile: $('#contactsFile'), contactsStatus: $('#contactsStatus'),
+                regionSelect: $('#regionSelect'), regionsBar: $('#regionsBar'),
+                categorySelect: $('#categorySelect'), categoriesBar: $('#categoriesBar'),
+                contactSearch: $('#contactSearch'),
+                peopleGrid: $('#peopleGrid'), peopleEmpty: $('#peopleEmpty'), peopleMeta: $('#peopleMeta'),
+
+                // elevator prices
+                elevReload: $('#elevReload'), elevFile: $('#elevFile'), elevStatus: $('#elevStatus'),
+                elevStartDate: $('#elevStartDate'), elevEndDate: $('#elevEndDate'),
+                elevApply: $('#elevApply'), elevReset: $('#elevReset'), elevExportCsv: $('#elevExportCsv'),
+                elevSliceStatus: $('#elevSliceStatus'),
+                elevElevatorsBar: $('#elevElevatorsBar'), elevTerminalsBar: $('#elevTerminalsBar'),
+                elevCultureGrid: $('#elevCultureGrid'), elevSelectNone: $('#elevSelectNone'),
+                elevInfoBar: $('#elevInfoBar'), elevInfoContent: $('#elevInfoContent'),
+                elevChart: $('#elevChart'), elevChartWrap: $('#elevChartWrap'), elevFsBtn: $('#elevFsBtn'),
+                elevKpis: $('#elevKpis'), elevHighsInfo: $('#elevHighsInfo'), elevLowsInfo: $('#elevLowsInfo'),
+                elevHighsTable: $('#elevHighsTable'), elevLowsTable: $('#elevLowsTable'),
+                elevRowsTable: $('#elevRowsTable'), elevRowsInfo: $('#elevRowsInfo'),
+
+                // elevator directory
+                elevReload2: $('#elevReload2'), elevFile2: $('#elevFile2'), elevStatus2: $('#elevStatus2'),
+                elevRegionSelect: $('#elevRegionSelect'), elevRegionsBar: $('#elevRegionsBar'),
+                elevSearch: $('#elevSearch'), elevGrid: $('#elevGrid'), elevEmpty: $('#elevEmpty'),
+                elevPeopleMeta: $('#elevPeopleMeta'),
+            };
+
+            // =================== PRICES ===================
+
+            function baseFamily(name) {
+                const s = String(name).trim();
+                const m = s.match(/^[\p{L}]+/u);
+                if (!m) return s;
+                const w = m[0];
+                return w.charAt(0).toLocaleUpperCase('uk') + w.slice(1).toLocaleLowerCase('uk');
+            }
+
+            async function fetchDefault() {
+                try {
+                    els.loadStatus.textContent = 'Fetching prices_clean.json…';
+                    const res = await fetch('prices_clean.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onData(json);
+                    els.loadStatus.textContent = 'Loaded prices_clean.json ✔';
+                } catch (e) {
+                    els.loadStatus.textContent = 'Fetch failed. Load a file manually.';
+                    console.error(e);
+                }
+            }
+            async function fetchKernel() {
+                try {
+                    els.loadStatus.textContent = 'Fetching kernel.json…';
+                    const res = await fetch('kernel.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onData(json);
+                    els.loadStatus.textContent = 'Loaded kernel.json ✔';
+                } catch (e) {
+                    els.loadStatus.textContent = 'Fetch kernel.json failed. Load a file manually.';
+                    console.error(e);
+                }
+            }
+            function onFileChosen(file) {
+                const r = new FileReader();
+                r.onload = () => {
+                    try { onData(JSON.parse(r.result)); els.loadStatus.textContent = `Loaded ${file.name} ✔`; }
+                    catch { els.loadStatus.textContent = 'Invalid JSON'; }
+                };
+                r.readAsText(file);
+            }
+
+            function normalize(json) {
+                const out = [];
+                for (const [dateKey, obj] of Object.entries(json)) {
+                    const date = parseISO(obj?.date ?? dateKey);
+                    const orgs = obj?.organizations || {};
+                    for (const [org, items] of Object.entries(orgs)) {
+                        for (const it of items) {
+                            let UAH = (typeof it.price === 'number') ? it.price : null;
+                            let USD = (typeof it.priceUsd === 'number') ? it.priceUsd : null;
+                            if (UAH === 0) UAH = null; if (USD === 0) USD = null; // ignore zeros
+                            out.push({ date, dateStr: toISO(date), org, commodity: it.name, family: baseFamily(it.name), UAH, USD });
+                        }
+                    }
+                }
+                out.sort((a, b) => a.date - b.date);
+                return out;
+            }
+
+            function buildLookups() {
+                FAMILY_MAP = new Map();
+                const companies = new Set();
+                for (const r of ROWS) {
+                    companies.add(r.org);
+                    if (!FAMILY_MAP.has(r.family)) FAMILY_MAP.set(r.family, new Set());
+                    FAMILY_MAP.get(r.family).add(r.commodity);
+                }
+                COMPANIES = Array.from(companies).sort((a, b) => a.localeCompare(b, 'uk'));
+            }
+
+            function populateSelectors() {
+                // companies
+                els.company.innerHTML = `<option value="">All companies</option>` +
+                    COMPANIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+                // dates
+                els.startDate.min = toISO(DATE_MIN); els.startDate.max = toISO(DATE_MAX);
+                els.endDate.min = toISO(DATE_MIN); els.endDate.max = toISO(DATE_MAX);
+                els.startDate.value = toISO(DATE_MIN);
+                els.endDate.value = toISO(DATE_MAX);
+
+                els.currency.value = 'UAH';
+
+                // culture panel
+                buildCulturePanel();
+            }
+
+            function buildCulturePanel() {
+                const families = Array.from(FAMILY_MAP.keys()).sort((a, b) => a.localeCompare(b, 'uk'));
+                const cols = families.map(fam => {
+                    const leaves = Array.from(FAMILY_MAP.get(fam)).sort((a, b) => a.localeCompare(b, 'uk'));
+                    const allId = `agg::${fam}`;
+                    const itemsHtml =
+                        `<div class="chk"><input type="checkbox" id="${allId}" data-mode="agg" data-family="${escapeHtml(fam)}">
+           <label for="${allId}">${escapeHtml(fam)} - всі</label></div>` +
+                        leaves.map(name => {
+                            const id = `leaf::${name}`;
+                            return `<div class="chk"><input type="checkbox" id="${id}" data-mode="leaf" data-family="${escapeHtml(fam)}" data-name="${escapeHtml(name)}">
+                    <label for="${id}">${escapeHtml(name)}</label></div>`;
+                        }).join('');
+                    return `<div class="culture-col"><div class="culture-head">${escapeHtml(fam)}</div>${itemsHtml}</div>`;
+                }).join('');
+                els.cultureGrid.innerHTML = cols;
+
+                // restore previous selection (if any)
+                for (const val of selected) {
+                    const el = document.getElementById(val);
+                    if (el) el.checked = true;
+                }
+
+                // mutual exclusivity within a family: 'agg' vs leaves
+                els.cultureGrid.addEventListener('change', onCultureChanged);
+            }
+
+            function onCultureChanged(e) {
+                const input = e.target.closest('input[type="checkbox"]');
+                if (!input) return;
+
+                const mode = input.dataset.mode;
+                const fam = input.dataset.family;
+                const name = input.dataset.name;
+                const id = (mode === 'agg') ? `agg::${fam}` : `leaf::${name}`;
+
+                if (input.checked) {
+                    // toggle exclusivity
+                    if (mode === 'agg') {
+                        // uncheck all leaves of this family
+                        els.cultureGrid.querySelectorAll(`input[data-family="${CSS.escape(fam)}"][data-mode="leaf"]`).forEach(x => { x.checked = false; selected.delete(`leaf::${x.dataset.name}`); });
+                        selected.add(id);
+                    } else {
+                        const aggId = `agg::${fam}`;
+                        const aggEl = document.getElementById(aggId);
+                        if (aggEl) { aggEl.checked = false; selected.delete(aggId); }
+                        selected.add(id);
+                    }
+                } else {
+                    selected.delete(id);
+                }
+                render();
+            }
+
+            function onData(json) {
+                ROWS = normalize(json);
+                if (!ROWS.length) { els.loadStatus.textContent = 'No rows'; return; }
+                DATE_MIN = ROWS[0].date; DATE_MAX = ROWS[ROWS.length - 1].date;
+                buildLookups();
+                populateSelectors();
+                render(); // draw immediately
+            }
+
+            function getFilters() {
+                return {
+                    start: parseISO(els.startDate.value || toISO(DATE_MIN)),
+                    end: parseISO(els.endDate.value || toISO(DATE_MAX)),
+                    selections: Array.from(selected), // strings 'agg::family' | 'leaf::name'
+                    company: els.company.value, currency: els.currency.value,
+                };
+            }
+
+            function groupBy(arr, keyFn) {
+                const m = new Map();
+                for (const x of arr) {
+                    const k = keyFn(x);
+                    const a = m.get(k); if (a) a.push(x); else m.set(k, [x]);
+                }
+                return m;
+            }
+
+            // Compute datasets for multiple selections
+            function computeMulti(f) {
+                const inRange = ROWS.filter(r => r.date >= f.start && r.date <= f.end);
+                const byDate = groupBy(inRange, r => r.dateStr);
+                const labels = Array.from(byDate.keys()).sort();
+                const currency = f.currency, val = r => r[currency];
+
+                const outDatasets = [];
+                const allStatsRows = [];
+                const palette = ['#6ea8ff', '#27e1ae', '#f6c14b', '#ff6b6b', '#a78bfa', '#66d9e8', '#ffd166', '#ef476f', '#4cc9f0', '#b8f7d4'];
+
+                const sels = f.selections.map((s, i) => {
+                    const [mode, key] = s.split('::');
+                    const color = palette[i % palette.length];
+                    const label = (mode === 'agg') ? `${key} — всі` : key;
+                    return { mode, key, color, label };
+                });
+
+                for (const s of sels) {
+                    const main = [];
+                    if (s.mode === 'leaf') {
+                        for (const d of labels) {
+                            const rows = (byDate.get(d) || []).filter(r => r.commodity === s.key && (!f.company || r.org === f.company));
+                            const vals = rows.map(val).filter(v => v != null);
+                            const v = vals.length ? mean(vals) : null;
+                            main.push(v);
+                            if (v != null) {
+                                const any = rows[0] || { date: parseISO(d), dateStr: d, org: f.company || '—', commodity: s.key };
+                                allStatsRows.push({ ...any, value: v });
+                            }
+                        }
+                    } else { // family aggregate per day (mean)
+                        for (const d of labels) {
+                            const rows = (byDate.get(d) || []).filter(r => r.family === s.key);
+                            if (f.company) {
+                                const v = mean(rows.filter(r => r.org === f.company).map(val).filter(v => v != null));
+                                main.push(Number.isFinite(v) ? v : null);
+                                if (Number.isFinite(v)) {
+                                    const any = rows[0] || { date: parseISO(d), dateStr: d };
+                                    allStatsRows.push({ date: any.date, dateStr: d, org: f.company, commodity: `${s.key} — всі`, value: v });
+                                }
+                            } else {
+                                // mean of firm means
+                                const byOrg = groupBy(rows, r => r.org);
+                                const perFirm = [];
+                                for (const [org, arr] of byOrg.entries()) {
+                                    const v = mean(arr.map(val).filter(v => v != null));
+                                    if (Number.isFinite(v)) {
+                                        perFirm.push({ org, v });
+                                        const any = arr[0] || { date: parseISO(d), dateStr: d };
+                                        allStatsRows.push({ date: any.date, dateStr: d, org, commodity: `${s.key} — всі`, value: v });
+                                    }
+                                }
+                                const v = mean(perFirm.map(x => x.v));
+                                main.push(Number.isFinite(v) ? v : null);
+                            }
+                        }
+                    }
+                    outDatasets.push({ label: s.label, color: s.color, main });
+                }
+
+                return { labels, datasets: outDatasets, statsRows: allStatsRows };
+            }
+
+            function computeYBounds(datasets) {
+                const vals = [];
+                for (const ds of datasets) { ds.main.forEach(v => Number.isFinite(v) && vals.push(v)); }
+                if (!vals.length) return {};
+                let minV = Math.min(...vals), maxV = Math.max(...vals);
+                if (minV === maxV) {
+                    const pad = Math.max(1, Math.abs(minV) * 0.05);
+                    return { suggestedMin: minV - pad, suggestedMax: maxV + pad };
+                }
+                const span = maxV - minV; const pad = Math.max(1, span * 0.08);
+                return { suggestedMin: minV - pad, suggestedMax: maxV + pad };
+            }
+
+            function seriesChangePct(arr) {
+                const a = arr.filter(v => Number.isFinite(v));
+                if (a.length < 2) return null;
+                const first = a[0], last = a[a.length - 1];
+                if (first === 0) return null;
+                return (last - first) / first * 100;
+            }
+
+            function computeStats(rows) {
+                const vals = rows.map(r => r.value).filter(v => v != null);
+                if (!vals.length) return null;
+                const minVal = Math.min(...vals), maxVal = Math.max(...vals);
+                const avgVal = mean(vals), medVal = median(vals), sdVal = stdev(vals);
+                const cov = avgVal ? (sdVal / avgVal) * 100 : 0;
+                const minRow = rows.filter(r => r.value === minVal)[0];
+                const maxRow = rows.filter(r => r.value === maxVal)[0];
+                return { count: vals.length, minVal, maxVal, avgVal, medVal, sdVal, cov, minRow, maxRow };
+            }
+
+            function highsLows(rows, take = 10) {
+                const good = rows.filter(r => r.value != null);
+                const highs = [...good].sort((a, b) => b.value - a.value).slice(0, take);
+                const lows = [...good].sort((a, b) => a.value - b.value).slice(0, take);
+                return { highs, lows };
+            }
+
+            function renderTable(tableEl, headers, rows) {
+                while (tableEl.firstChild) tableEl.removeChild(tableEl.firstChild);
+                const thead = document.createElement('thead');
+                const trh = document.createElement('tr');
+                headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; trh.appendChild(th); });
+                thead.appendChild(trh);
+                const tbody = document.createElement('tbody');
+                if (!rows.length) {
+                    const tr = document.createElement('tr'); const td = document.createElement('td');
+                    td.textContent = '—'; td.colSpan = headers.length; tr.appendChild(td); tbody.appendChild(tr);
+                } else {
+                    rows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        row.forEach(cell => { const td = document.createElement('td'); td.textContent = String(cell); tr.appendChild(td); });
+                        tbody.appendChild(tr);
+                    });
+                }
+                tableEl.appendChild(thead); tableEl.appendChild(tbody);
+            }
+
+            function sellersUnion(f) {
+                const inRange = ROWS.filter(r => r.date >= f.start && r.date <= f.end);
+                const set = new Set();
+                for (const sel of f.selections) {
+                    const [mode, key] = sel.split('::');
+                    if (mode === 'leaf') {
+                        for (const r of inRange) if (r.commodity === key && r[f.currency] != null) set.add(r.org);
+                    } else {
+                        for (const r of inRange) if (r.family === key && r[f.currency] != null) set.add(r.org);
+                    }
+                }
+                return Array.from(set).sort((a, b) => a.localeCompare(b, 'uk'));
+            }
+
+            function renderInfoBar(f) {
+                const sels = f.selections.map(s => {
+                    const [mode, key] = s.split('::');
+                    return (mode === 'agg') ? `${key} — всі` : key;
+                });
+                const sellers = sellersUnion(f);
+
+                let html = '';
+                if (!sels.length) {
+                    html = `<strong>Select at least one culture above.</strong>`;
+                } else if (sellers.length) {
+                    const pills = sellers.map(s =>
+                        `<span class="pill clickable${f.company === s ? ' active' : ''}" data-company="${escapeHtml(s)}">${escapeHtml(s)}</span>`
+                    ).join(' ');
+                    const notAvail = (f.company && !sellers.includes(f.company))
+                        ? ` <span class="label" style="margin-left:8px;color:#ff9c9c">Selected cultures not sold at ${escapeHtml(f.company)} in this period.</span>`
+                        : '';
+                    html = `<div style="margin-bottom:6px"><strong>Selected:</strong> ${escapeHtml(sels.join(', '))}</div>
+              <div><strong>Sold by:</strong> ${pills}${notAvail}</div>`;
+                } else {
+                    html = `<div style="margin-bottom:6px"><strong>Selected:</strong> ${escapeHtml(sels.join(', '))}</div>
+              <strong>No company sold the selection in this period.</strong>`;
+                }
+                els.infoBar.style.display = '';
+                els.infoContent.innerHTML = html;
+            }
+
+            function render() {
+                if (els.tabPrices.hasAttribute('hidden')) return;
+
+                const f = getFilters();
+
+                // compute
+                const multi = computeMulti(f);
+
+                // Info bar
+                renderInfoBar(f);
+
+                // datasets for Chart.js
+                const currencyFmt = (f.currency === 'UAH') ? fmtUAH : fmtUSD;
+                const datasets = multi.datasets.map(ds => ({
+                    label: ds.label,
+                    data: ds.main,
+                    borderWidth: 2.5,
+                    borderColor: ds.color,
+                    pointRadius: 0,
+                    tension: .25
+                }));
+
+                // bounds
+                const yb = computeYBounds(multi.datasets);
+                const maxTicks = calcMaxTicks();
+                if (chart) chart.destroy();
+                chart = new Chart(els.canvas.getContext('2d'), {
+                    type: 'line',
+                    data: { labels: multi.labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, spanGaps: true,
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#a9b2be', maxRotation: 0, minRotation: 0, autoSkip: true, autoSkipPadding: 12, maxTicksLimit: maxTicks,
+                                    callback: (_, idx) => formatTickLabel(multi.labels[idx], maxTicks)
+                                },
+                                grid: { color: 'rgba(37,48,58,0.5)' }
+                            },
+                            y: {
+                                ticks: { color: '#a9b2be', callback: (v) => currencyFmt(v) },
+                                grid: { color: 'rgba(37,48,58,0.5)' }, ...yb
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#e6edf3' } },
+                            tooltip: { callbacks: { title: (c) => c[0]?.label || '', label: (c) => `${c.dataset.label}: ${currencyFmt(c.parsed.y)}` } }
+                        }
+                    }
+                });
+
+                // status
+                els.sliceStatus.textContent = `${multi.statsRows.length} observations`;
+
+                // KPIs
+                const stats = computeStats(multi.statsRows);
+                const items = [];
+                items.push(kpi('Observations', String(multi.statsRows.length || 0)));
+                if (stats) {
+                    items.push(kpi('Min', currencyFmt(stats.minVal), 'bad', `${fmtDate(stats.minRow.date)} • ${stats.minRow.org}`));
+                    items.push(kpi('Max', currencyFmt(stats.maxVal), 'good', `${fmtDate(stats.maxRow.date)} • ${stats.maxRow.org}`));
+                    items.push(kpi('Mean', currencyFmt(stats.avgVal)));
+                    items.push(kpi('Median', currencyFmt(stats.medVal)));
+                    items.push(kpi('StDev', currencyFmt(stats.sdVal), 'warn'));
+                    items.push(kpi('CoV', `${stats.cov.toFixed(1)}%`));
+                    // Overall change: use first visible series if any
+                    const firstSeries = multi.datasets.find(d => d.main.some(Number.isFinite));
+                    if (firstSeries) {
+                        const chg = seriesChangePct(firstSeries.main);
+                        if (chg != null) items.push(kpi('Change (first series)', `${(chg >= 0 ? '+' : '')}${chg.toFixed(2)}%`, chg >= 0 ? 'good' : 'bad'));
+                    }
+                }
+                els.kpis.innerHTML = items.join('');
+                els.fxNote.style.display = 'none';
+
+                // Tables
+                const { highs, lows } = highsLows(multi.statsRows, 10);
+                els.highsInfo.textContent = `${highs.length} records`;
+                els.lowsInfo.textContent = `${lows.length} records`;
+                renderTable(els.highsTable, ['Date', 'Company', 'Commodity', 'Price'], highs.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                renderTable(els.lowsTable, ['Date', 'Company', 'Commodity', 'Price'], lows.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                renderTable(els.rowsTable, ['Date (local)', 'ISO', 'Company', 'Commodity', 'Value'], multi.statsRows.map(r => [fmtDate(r.date), r.dateStr, r.org, r.commodity, currencyFmt(r.value)]));
+            }
+
+            function kpi(label, value, mood, sub) {
+                return `<div class="kpi ${mood || ''}">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${escapeHtml(value)}</div>
+      ${sub ? `<div class="label" style="margin-top:6px">${escapeHtml(sub)}</div>` : ''}
+    </div>`;
+            }
+
+            // CSV export
+            function exportCsv() {
+                const f = getFilters();
+                const { statsRows } = computeMulti(f);
+                if (!statsRows.length) return;
+                const rows = [['date_local', 'date_iso', 'company', 'commodity', 'value', 'currency']];
+                for (const r of statsRows) {
+                    rows.push([fmtDate(r.date), r.dateStr, r.org, r.commodity, r.value, f.currency]);
+                }
+                const csv = rows.map(r => r.map(v => {
+                    const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                }).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'filtered_prices.csv';
+                document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+            }
+
+            // Fullscreen (robust)
+            function fsElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+            function inFullscreen() { return fsElement() === els.chartWrap || els.chartWrap.classList.contains('pseudoFS'); }
+            function updateFsButton() { if (inFullscreen()) { els.fsBtn.textContent = '⤡'; els.fsBtn.title = 'Exit fullscreen'; } else { els.fsBtn.textContent = '⤢'; els.fsBtn.title = 'Enter fullscreen'; } }
+            async function enterFs() {
+                try {
+                    if (els.chartWrap.requestFullscreen) { await els.chartWrap.requestFullscreen({ navigationUI: 'hide' }); }
+                    else if (els.chartWrap.webkitRequestFullscreen) { els.chartWrap.webkitRequestFullscreen(); }
+                    else { throw new Error('Fullscreen not supported'); }
+                } catch (e) { els.chartWrap.classList.add('pseudoFS'); onFsChange(); }
+            }
+            async function exitFs() {
+                try {
+                    if (document.exitFullscreen) { await document.exitFullscreen(); }
+                    else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+                    else { throw new Error('Exit fullscreen not supported'); }
+                } catch (e) { els.chartWrap.classList.remove('pseudoFS'); onFsChange(); }
+            }
+            let _resizeTimer = null;
+            function scheduleRerender() { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(() => render(), 120); }
+            function onFsChange() { updateFsButton(); scheduleRerender(); }
+
+            // =================== CONTACTS ===================
+
+            function normalizeContacts(json, categoryKey) {
+                const categoryLabel = CATEGORY[categoryKey] || 'Інше';
+                const groups = Array.isArray(json) ? json : [];
+                groups.forEach(g => {
+                    g.region = g.region || 'Без регіону';
+                    g.categoryKey = categoryKey;
+                    g.categoryLabel = categoryLabel;
+                    g.people = Array.isArray(g.people) ? g.people.map(p => ({
+                        name: p.name || '—',
+                        role: p.role || '',
+                        email: p.email || '',
+                        phone: p.phone || '',
+                        phone_alt: p.phone_alt || '',
+                        image: p.image || '',
+                        photo_id: p.photo_id || ''
+                    })) : [];
+                });
+                return groups;
+            }
+
+            function onContacts(json, categoryKey) {
+                const incoming = normalizeContacts(json, categoryKey);
+                CONTACTS = CONTACTS.concat(incoming);
+
+                const all = Array.from(new Set(CONTACTS.map(g => g.region)));
+                REGIONS = all.sort((a, b) => {
+                    if (a === PRIMARY_REGION && b !== PRIMARY_REGION) return -1;
+                    if (b === PRIMARY_REGION && a !== PRIMARY_REGION) return 1;
+                    return a.localeCompare(b, 'uk');
+                });
+
+                buildRegionsUI();
+                buildCategoriesUI();
+                renderContacts();
+            }
+
+            async function fetchContactsDefault() {
+                try {
+                    els.contactsStatus.textContent = 'Fetching contacts.json…';
+                    const res = await fetch('contacts.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onContacts(json, 'distribution');
+                    els.contactsStatus.textContent = 'Loaded contacts.json ✔';
+                } catch (e) {
+                    els.contactsStatus.textContent = 'Fetch failed. Load a file manually.';
+                    console.warn(e);
+                }
+            }
+            async function fetchContactsSales() {
+                try {
+                    els.contactsStatus.textContent = 'Fetching contacts_sales.json…';
+                    const res = await fetch('contacts_sales.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onContacts(json, 'procurement');
+                    els.contactsStatus.textContent = 'Loaded contacts_sales.json ✔';
+                } catch (e) {
+                    console.warn(e);
+                    els.contactsStatus.textContent = 'contacts_sales.json not found (optional).';
+                }
+            }
+            function onContactsFile(file) {
+                const name = (file?.name || '').toLowerCase();
+                const categoryKey = name.includes('sales') ? 'procurement' : 'distribution';
+                const r = new FileReader();
+                r.onload = () => {
+                    try { onContacts(JSON.parse(r.result), categoryKey); els.contactsStatus.textContent = `Loaded ${file.name} ✔`; }
+                    catch { els.contactsStatus.textContent = 'Invalid contacts JSON.'; }
+                };
+                r.readAsText(file);
+            }
+
+            function buildRegionsUI() {
+                els.regionSelect.innerHTML = `<option value="">All regions</option>` +
+                    REGIONS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+                // chips
+                els.regionsBar.innerHTML = REGIONS.map(r =>
+                    `<span class="pill clickable${regionSel === r ? ' active' : ''}" data-region="${escapeHtml(r)}">${escapeHtml(r)}</span>`
+                ).join(' ');
+            }
+
+            function buildCategoriesUI() {
+                els.categorySelect.value = categorySel;
+                const chips = [
+                    { key: 'distribution', label: CATEGORY.distribution },
+                    { key: 'procurement', label: CATEGORY.procurement }
+                ];
+                els.categoriesBar.innerHTML = chips.map(c =>
+                    `<span class="pill clickable${categorySel === c.key ? ' active' : ''}" data-category="${c.key}">${c.label}</span>`
+                ).join(' ');
+            }
+
+            function filteredPeople() {
+                const groupsScope = CONTACTS.filter(g => !categorySel || g.categoryKey === categorySel);
+                const groups = regionSel ? groupsScope.filter(g => g.region === regionSel) : groupsScope;
+
+                let people = [];
+                for (const g of groups) {
+                    for (const p of g.people) {
+                        people.push({ ...p, region: g.region, categoryKey: g.categoryKey, categoryLabel: g.categoryLabel });
+                    }
+                }
+                if (searchSel) {
+                    const q = searchSel.toLowerCase();
+                    people = people.filter(p =>
+                        (p.name || '').toLowerCase().includes(q) ||
+                        (p.role || '').toLowerCase().includes(q) ||
+                        (p.email || '').toLowerCase().includes(q) ||
+                        (p.phone || '').toLowerCase().includes(q) ||
+                        (p.region || '').toLowerCase().includes(q) ||
+                        (p.categoryLabel || '').toLowerCase().includes(q)
+                    );
+                }
+                return people;
+            }
+
+            function renderContacts() {
+                buildRegionsUI();
+                buildCategoriesUI();
+
+                const ppl = filteredPeople();
+                const parts = [];
+                parts.push(`${ppl.length} contact(s)`);
+                if (regionSel) parts.push(regionSel);
+                if (categorySel) parts.push(CATEGORY[categorySel]);
+                els.peopleMeta.textContent = parts.join(' • ');
+
+                els.peopleGrid.innerHTML = '';
+                if (!ppl.length) {
+                    els.peopleEmpty.style.display = '';
+                    return;
+                }
+                els.peopleEmpty.style.display = 'none';
+
+                const frag = document.createDocumentFragment();
+                for (const p of ppl) {
+                    const card = document.createElement('div'); card.className = 'person';
+
+                    const av = document.createElement('div'); av.className = 'avatar';
+                    if (p.image) {
+                        const img = document.createElement('img'); img.src = p.image; img.alt = p.name;
+                        img.onerror = () => { av.textContent = initials(p.name); av.removeChild(img); };
+                        av.appendChild(img);
+                    } else {
+                        av.textContent = initials(p.name);
+                    }
+
+                    const meta = document.createElement('div'); meta.className = 'meta';
+                    const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = p.name;
+                    const rl = document.createElement('div'); rl.className = 'role'; rl.textContent = p.role || '—';
+
+                    const l1 = document.createElement('div'); l1.className = 'line';
+                    if (p.email) {
+                        const a = document.createElement('a'); a.href = `mailto:${p.email}`; a.textContent = p.email; l1.appendChild(a);
+                    } else { l1.textContent = '—'; }
+
+                    const l2 = document.createElement('div'); l2.className = 'line';
+                    if (p.phone) {
+                        const a = document.createElement('a'); a.href = `tel:${p.phone.replace(/\s+/g, '')}`; a.textContent = p.phone; l2.appendChild(a);
+                    }
+
+                    if (p.phone_alt) {
+                        const l2b = document.createElement('div'); l2b.className = 'line'; l2b.textContent = p.phone_alt; meta.appendChild(l2b);
+                    }
+
+                    const lCat = document.createElement('div'); lCat.className = 'line'; lCat.style.fontSize = '11px'; lCat.style.color = 'var(--sub)'; lCat.textContent = p.categoryLabel || '';
+                    const l3 = document.createElement('div'); l3.className = 'line'; l3.style.fontSize = '11px'; l3.style.color = 'var(--sub)'; l3.textContent = p.region;
+
+                    meta.appendChild(nm); meta.appendChild(rl); meta.appendChild(l1); meta.appendChild(l2); meta.appendChild(lCat); meta.appendChild(l3);
+                    card.appendChild(av); card.appendChild(meta);
+                    frag.appendChild(card);
+                }
+                els.peopleGrid.appendChild(frag);
+            }
+
+            // =================== ELEVATORS (prices + directory) ===================
+
+            function normalizeElevatorsAll(json) {
+                const rows = [];
+                const infoMap = new Map();
+                const regionsByDate = json || {};
+                for (const [dateKey, regions] of Object.entries(regionsByDate)) {
+                    for (const [regionName, regionObj] of Object.entries(regions || {})) {
+                        const date = parseISO((regionObj && regionObj.date) || dateKey);
+                        for (const ev of (regionObj?.elevators || [])) {
+                            const name = ev.name || '—';
+                            if (!infoMap.has(name)) {
+                                infoMap.set(name, {
+                                    name, region: regionName || '—',
+                                    address: ev.address || '',
+                                    director: ev.director || '',
+                                    phone: ev.phone || '',
+                                    traders: Array.isArray(ev.traders) ? ev.traders.map(t => ({ name: t.name || '', phone: t.phone || '' })) : []
+                                });
+                            }
+                            for (const c of (ev.crops || [])) {
+                                let price = (typeof c.price === 'number') ? c.price : null;
+                                if (price === 0) price = null; // ignore zeros
+                                const commodity = c.name || '—';
+                                rows.push({
+                                    date, dateStr: toISO(date),
+                                    region: regionName || '—',
+                                    elevator: name,
+                                    terminal: c.terminal || '',
+                                    commodity, family: baseFamily(commodity),
+                                    UAH: price
+                                });
+                            }
+                        }
+                    }
+                }
+                rows.sort((a, b) => a.date - b.date);
+                return { rows, info: Array.from(infoMap.values()) };
+            }
+
+            function buildElevLookups() {
+                ELEV_FAMILY = new Map();
+                const eSet = new Set(), tSet = new Set(), rSet = new Set();
+                for (const r of ELEV_ROWS) {
+                    if (!ELEV_FAMILY.has(r.family)) ELEV_FAMILY.set(r.family, new Set());
+                    ELEV_FAMILY.get(r.family).add(r.commodity);
+                    eSet.add(r.elevator);
+                    if (r.terminal) tSet.add(r.terminal);
+                    if (r.region) rSet.add(r.region);
+                }
+                ELEV_ELEVATORS = Array.from(eSet).sort((a, b) => a.localeCompare(b, 'uk'));
+                ELEV_TERMINALS = Array.from(tSet).sort((a, b) => a.localeCompare(b, 'uk'));
+                ELEV_REGIONS = Array.from(rSet).sort((a, b) => a.localeCompare(b, 'uk'));
+            }
+
+            function populateElevSelectors() {
+                // dates
+                els.elevStartDate.min = toISO(ELEV_DATE_MIN); els.elevStartDate.max = toISO(ELEV_DATE_MAX);
+                els.elevEndDate.min = toISO(ELEV_DATE_MIN); els.elevEndDate.max = toISO(ELEV_DATE_MAX);
+                els.elevStartDate.value = toISO(ELEV_DATE_MIN);
+                els.elevEndDate.value = toISO(ELEV_DATE_MAX);
+
+                // chips
+                buildElevChips();
+                buildElevCulturePanel();
+
+                // directory regions
+                els.elevRegionSelect.innerHTML = `<option value="">All regions</option>` +
+                    ELEV_REGIONS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+                els.elevRegionsBar.innerHTML = ELEV_REGIONS.map(r => `<span class="pill clickable${elevRegionSel === r ? ' active' : ''}" data-elev-region="${escapeHtml(r)}">${escapeHtml(r)}</span>`).join(' ');
+
+                syncActivePills(els.elevRegionsBar, 'data-elev-region', elevRegionSel);
+            }
+
+            function buildElevChips() {
+                els.elevElevatorsBar.innerHTML = ELEV_ELEVATORS.map(n =>
+                    `<span class="pill clickable${elevElevSel.has(n) ? ' active' : ''}" data-elv="${escapeHtml(n)}">${escapeHtml(n)}</span>`
+                ).join(' ');
+                els.elevTerminalsBar.innerHTML = ELEV_TERMINALS.length
+                    ? ELEV_TERMINALS.map(n => `<span class="pill clickable${elevTermSel.has(n) ? ' active' : ''}" data-term="${escapeHtml(n)}">${escapeHtml(n)}</span>`).join(' ')
+                    : `<span class="hint">No terminals present in data</span>`;
+            }
+
+            function buildElevCulturePanel() {
+                const families = Array.from(ELEV_FAMILY.keys()).sort((a, b) => a.localeCompare(b, 'uk'));
+                const cols = families.map(fam => {
+                    const leaves = Array.from(ELEV_FAMILY.get(fam)).sort((a, b) => a.localeCompare(b, 'uk'));
+                    const allId = `eagg::${fam}`;
+                    const itemsHtml =
+                        `<div class="chk"><input type="checkbox" id="${allId}" data-mode="agg" data-family="${escapeHtml(fam)}"><label for="${allId}">${escapeHtml(fam)} - всі</label></div>` +
+                        leaves.map(name => {
+                            const id = `eleaf::${name}`;
+                            return `<div class="chk"><input type="checkbox" id="${id}" data-mode="leaf" data-family="${escapeHtml(fam)}" data-name="${escapeHtml(name)}"><label for="${id}">${escapeHtml(name)}</label></div>`;
+                        }).join('');
+                    return `<div class="culture-col"><div class="culture-head">${escapeHtml(fam)}</div>${itemsHtml}</div>`;
+                }).join('');
+                els.elevCultureGrid.innerHTML = cols;
+
+                // restore selection
+                for (const v of elevSelected) { const el = document.getElementById(v); if (el) el.checked = true; }
+
+                els.elevCultureGrid.addEventListener('change', e => {
+                    const input = e.target.closest('input[type="checkbox"]'); if (!input) return;
+                    const mode = input.dataset.mode, fam = input.dataset.family, name = input.dataset.name;
+                    const id = (mode === 'agg') ? `eagg::${fam}` : `eleaf::${name}`;
+                    if (input.checked) {
+                        if (mode === 'agg') {
+                            els.elevCultureGrid.querySelectorAll(`input[data-family="${CSS.escape(fam)}"][data-mode="leaf"]`)
+                                .forEach(x => { x.checked = false; elevSelected.delete(`eleaf::${x.dataset.name}`); });
+                            elevSelected.add(id);
+                        } else {
+                            const aggId = `eagg::${fam}`; const aggEl = document.getElementById(aggId);
+                            if (aggEl) { aggEl.checked = false; elevSelected.delete(aggId); }
+                            elevSelected.add(id);
+                        }
+                    } else {
+                        elevSelected.delete(id);
+                    }
+                    renderElevPrices();
+                });
+            }
+
+            async function fetchElevatorsDefault(statusEl) {
+                try {
+                    if (statusEl) statusEl.textContent = 'Fetching elevators.json…';
+                    const res = await fetch('elevators.json', { cache: 'no-cache' });
+                    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+                    const json = await res.json();
+                    onElevatorsData(json);
+                    if (statusEl) statusEl.textContent = 'Loaded elevators.json ✔';
+                } catch (e) {
+                    if (statusEl) statusEl.textContent = 'elevators.json not found (optional).';
+                    console.warn(e);
+                }
+            }
+            function onElevatorsFile(file, statusEl) {
+                const r = new FileReader();
+                r.onload = () => {
+                    try { onElevatorsData(JSON.parse(r.result)); statusEl.textContent = `Loaded ${file.name} ✔`; }
+                    catch { statusEl.textContent = 'Invalid JSON'; }
+                };
+                r.readAsText(file);
+            }
+            function onElevatorsData(json) {
+                const { rows, info } = normalizeElevatorsAll(json);
+                ELEV_ROWS = rows; ELEV_INFO = info;
+                if (!ELEV_ROWS.length) { if (els.elevStatus) els.elevStatus.textContent = 'No rows'; return; }
+                ELEV_DATE_MIN = ELEV_ROWS[0].date; ELEV_DATE_MAX = ELEV_ROWS[ELEV_ROWS.length - 1].date;
+                buildElevLookups();
+                populateElevSelectors();
+                renderElevPrices();
+                renderElevDirectory();
+            }
+
+            function getElevFilters() {
+                return {
+                    start: parseISO(els.elevStartDate.value || toISO(ELEV_DATE_MIN)),
+                    end: parseISO(els.elevEndDate.value || toISO(ELEV_DATE_MAX)),
+                    selections: Array.from(elevSelected), // 'eagg::family' | 'eleaf::name'
+                    elevators: elevElevSel.size ? Array.from(elevElevSel) : null,
+                    terminals: elevTermSel.size ? Array.from(elevTermSel) : null,
+                };
+            }
+
+            function computeElevMulti(f) {
+                const inRange = ELEV_ROWS.filter(r =>
+                    r.date >= f.start && r.date <= f.end &&
+                    (!f.elevators || f.elevators.includes(r.elevator)) &&
+                    (!f.terminals || f.terminals.includes(r.terminal))
+                );
+                const byDate = groupBy(inRange, r => r.dateStr);
+                const labels = Array.from(byDate.keys()).sort();
+
+                const outDatasets = [], statsRows = [];
+                const palette = ['#6ea8ff', '#27e1ae', '#f6c14b', '#ff6b6b', '#a78bfa', '#66d9e8', '#ffd166', '#ef476f', '#4cc9f0', '#b8f7d4'];
+
+                const sels = f.selections.map((s, i) => {
+                    const [mode, key] = s.split('::'); // eagg / eleaf
+                    const color = palette[i % palette.length];
+                    const label = (mode === 'eagg') ? `${key} — всі` : s.slice('eleaf::'.length);
+                    return { mode, key: (mode === 'eagg' ? key : s.slice('eleaf::'.length)), color, label };
+                });
+
+                for (const s of sels) {
+                    const main = [];
+                    for (const d of labels) {
+                        let rows = (byDate.get(d) || []);
+                        rows = (s.mode === 'eagg') ? rows.filter(r => r.family === s.key) : rows.filter(r => r.commodity === s.key);
+                        const vals = rows.map(r => r.UAH).filter(v => v != null);
+                        const v = vals.length ? mean(vals) : null;
+                        main.push(Number.isFinite(v) ? v : null);
+                        if (Number.isFinite(v)) {
+                            const any = rows[0] || { elevator: '—' };
+                            statsRows.push({ date: parseISO(d), dateStr: d, org: any.elevator, commodity: (s.mode === 'eagg' ? `${s.key} — всі` : s.key), value: v });
+                        }
+                    }
+                    outDatasets.push({ label: s.label, color: s.color, main });
+                }
+                return { labels, datasets: outDatasets, statsRows };
+            }
+
+            function renderElevInfoBar(f) {
+                const sels = f.selections.map(s => {
+                    const [mode, key] = s.split('::');
+                    return (mode === 'eagg') ? `${key} — всі` : key.replace(/^eleaf::/, '');
+                });
+                let html = '';
+                if (!sels.length) {
+                    html = `<strong>Select at least one culture above.</strong>`;
+                } else {
+                    const elevPills = (ELEV_ELEVATORS.length ? ELEV_ELEVATORS : [])
+                        .map(n => `<span class="pill clickable${elevElevSel.has(n) ? ' active' : ''}" data-elv="${escapeHtml(n)}">${escapeHtml(n)}</span>`).join(' ');
+                    const termPills = (ELEV_TERMINALS.length ? ELEV_TERMINALS : [])
+                        .map(n => `<span class="pill clickable${elevTermSel.has(n) ? ' active' : ''}" data-term="${escapeHtml(n)}">${escapeHtml(n)}</span>`).join(' ');
+                    html = `<div style="margin-bottom:6px"><strong>Selected:</strong> ${escapeHtml(sels.join(', '))}</div>
+                        <div style="margin-bottom:4px"><strong>Elevators:</strong> ${elevPills || '—'}</div>
+                        <div><strong>Terminals:</strong> ${termPills || '—'}</div>`;
+                }
+                els.elevInfoBar.style.display = '';
+                els.elevInfoContent.innerHTML = html;
+            }
+
+            function renderElevPrices() {
+                if (els.tabElevPrices.hasAttribute('hidden')) return;
+                if (!ELEV_ROWS.length) { els.elevSliceStatus.textContent = '0 observations'; return; }
+
+                const f = getElevFilters();
+                const multi = computeElevMulti(f);
+                renderElevInfoBar(f);
+
+                const currencyFmt = fmtUAH;
+                const datasets = multi.datasets.map(ds => ({
+                    label: ds.label, data: ds.main, borderWidth: 2.5, borderColor: ds.color, pointRadius: 0, tension: .25
+                }));
+                const yb = computeYBounds(multi.datasets);
+                const maxTicks = calcMaxTicks();
+
+                if (elevChart) elevChart.destroy();
+                elevChart = new Chart(els.elevChart.getContext('2d'), {
+                    type: 'line',
+                    data: { labels: multi.labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, spanGaps: true,
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#a9b2be', maxRotation: 0, minRotation: 0, autoSkip: true, autoSkipPadding: 12, maxTicksLimit: maxTicks,
+                                    callback: (_, idx) => formatTickLabel(multi.labels[idx], maxTicks)
+                                }, grid: { color: 'rgba(37,48,58,0.5)' }
+                            },
+                            y: { ticks: { color: '#a9b2be', callback: (v) => currencyFmt(v) }, grid: { color: 'rgba(37,48,58,0.5)' }, ...yb }
+                        },
+                        plugins: { legend: { labels: { color: '#e6edf3' } }, tooltip: { callbacks: { title: (c) => c[0]?.label || '', label: (c) => `${c.dataset.label}: ${currencyFmt(c.parsed.y)}` } } }
+                    }
+                });
+
+                els.elevSliceStatus.textContent = `${multi.statsRows.length} observations`;
+
+                const stats = computeStats(multi.statsRows);
+                const items = [];
+                items.push(kpi('Observations', String(multi.statsRows.length || 0)));
+                if (stats) {
+                    items.push(kpi('Min', currencyFmt(stats.minVal), 'bad', `${fmtDate(stats.minRow.date)} • ${stats.minRow.org}`));
+                    items.push(kpi('Max', currencyFmt(stats.maxVal), 'good', `${fmtDate(stats.maxRow.date)} • ${stats.maxRow.org}`));
+                    items.push(kpi('Mean', currencyFmt(stats.avgVal)));
+                    items.push(kpi('Median', currencyFmt(stats.medVal)));
+                    items.push(kpi('StDev', currencyFmt(stats.sdVal), 'warn'));
+                    items.push(kpi('CoV', `${stats.cov.toFixed(1)}%`));
+                }
+                els.elevKpis.innerHTML = items.join('');
+
+                const { highs, lows } = highsLows(multi.statsRows, 10);
+                els.elevHighsInfo.textContent = `${highs.length} records`;
+                els.elevLowsInfo.textContent = `${lows.length} records`;
+                renderTable(els.elevHighsTable, ['Date', 'Elevator', 'Commodity', 'Price'], highs.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                renderTable(els.elevLowsTable, ['Date', 'Elevator', 'Commodity', 'Price'], lows.map(r => [fmtDate(r.date), r.org, r.commodity, currencyFmt(r.value)]));
+                renderTable(els.elevRowsTable, ['Date (local)', 'ISO', 'Elevator', 'Commodity', 'Value'], multi.statsRows.map(r => [fmtDate(r.date), r.dateStr, r.org, r.commodity, currencyFmt(r.value)]));
+            }
+
+            function filteredElevators() {
+                let arr = ELEV_INFO.slice();
+                if (elevRegionSel) arr = arr.filter(x => x.region === elevRegionSel);
+                if (elevSearchSel) {
+                    const q = elevSearchSel.toLowerCase();
+                    arr = arr.filter(x =>
+                        (x.name || '').toLowerCase().includes(q) ||
+                        (x.region || '').toLowerCase().includes(q) ||
+                        (x.director || '').toLowerCase().includes(q) ||
+                        (x.address || '').toLowerCase().includes(q) ||
+                        (x.phone || '').toLowerCase().includes(q) ||
+                        (x.traders || []).some(t => (t.name || '').toLowerCase().includes(q) || (t.phone || '').toLowerCase().includes(q))
+                    );
+                }
+                return arr;
+            }
+
+            function renderElevDirectory() {
+                if (els.tabElevInfo.hasAttribute('hidden')) return;
+                els.elevGrid.innerHTML = '';
+                const list = filteredElevators();
+                els.elevPeopleMeta.textContent = `${list.length} elevator(s)` + (elevRegionSel ? ` • ${elevRegionSel}` : '');
+                if (!list.length) { els.elevEmpty.style.display = ''; return; }
+                els.elevEmpty.style.display = 'none';
+
+                const frag = document.createDocumentFragment();
+                for (const e of list) {
+                    const card = document.createElement('div'); card.className = 'elevCard';
+                    const title = document.createElement('div'); title.className = 'title'; title.textContent = e.name;
+                    const r = document.createElement('div'); r.className = 'line'; r.style.color = 'var(--sub)'; r.textContent = e.region;
+                    const addr = document.createElement('div'); addr.className = 'line';
+                    if (e.address) {
+                        const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' +
+                            encodeURIComponent((e.address || '') + (e.region ? ', ' + e.region : ''));
+                        const a = document.createElement('a');
+                        a.href = mapsUrl;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+                        a.textContent = e.address;
+                        addr.appendChild(a);
+                    } else {
+                        addr.textContent = '—';
+                    }
+                    const dir = document.createElement('div'); dir.className = 'line'; dir.textContent = e.director ? `Директор: ${e.director || e.director}` : '';
+                    const ph = document.createElement('div'); ph.className = 'line';
+                    if (e.phone) { const a = document.createElement('a'); a.href = `tel:${e.phone.replace(/\s+/g, '')}`; a.textContent = e.phone; ph.appendChild(a); }
+                    const tr = document.createElement('div'); tr.className = 'line';
+                    if (e.traders?.length) {
+                        tr.innerHTML = 'Трейдери: ' + e.traders.map(t => `${escapeHtml(t.name)}${t.phone ? ' — <a href="tel:' + t.phone.replace(/\s+/g, '') + '">' + escapeHtml(t.phone) + '</a>' : ''}`).join(', ');
+                    }
+                    card.appendChild(title); card.appendChild(r); card.appendChild(addr); if (dir.textContent) card.appendChild(dir); if (ph.childNodes.length) card.appendChild(ph); if (tr.innerHTML) card.appendChild(tr);
+                    frag.appendChild(card);
+                }
+                els.elevGrid.appendChild(frag);
+            }
+
+            function exportElevCsv() {
+                const f = getElevFilters();
+                const { statsRows } = computeElevMulti(f);
+                if (!statsRows.length) return;
+                const rows = [['date_local', 'date_iso', 'elevator', 'commodity', 'value', 'currency']];
+                for (const r of statsRows) { rows.push([fmtDate(r.date), r.dateStr, r.org, r.commodity, r.value, 'UAH']); }
+                const csv = rows.map(r => r.map(v => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'elevator_prices.csv'; document.body.appendChild(a); a.click();
+                setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+            }
+
+            function wireFsFor(wrap, btn, rerender) {
+                const inFs = () => (document.fullscreenElement === wrap || document.webkitFullscreenElement === wrap || wrap.classList.contains('pseudoFS'));
+                const update = () => { btn.textContent = inFs() ? '⤡' : '⤢'; btn.title = inFs() ? 'Exit fullscreen' : 'Enter fullscreen'; };
+                async function enter() {
+                    try {
+                        if (wrap.requestFullscreen) await wrap.requestFullscreen({ navigationUI: 'hide' });
+                        else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+                        else throw new Error('no fs');
+                    } catch (e) { wrap.classList.add('pseudoFS'); rerender(); update(); }
+                }
+                async function exit() {
+                    try {
+                        if (document.exitFullscreen) await document.exitFullscreen();
+                        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                        else throw new Error('no exit');
+                    } catch (e) { wrap.classList.remove('pseudoFS'); rerender(); update(); }
+                }
+                btn.addEventListener('click', () => { inFs() ? exit() : enter(); });
+                ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => { update(); rerender(); }));
+                window.addEventListener('resize', () => { setTimeout(rerender, 120); });
+                update();
+            }
+
+            function syncActivePills(container, dataAttr, selectedValue) {
+                const sel = `.pill.clickable[${dataAttr}]`;
+                container.querySelectorAll(sel).forEach(el => {
+                    const v = el.getAttribute(dataAttr);
+                    el.classList.toggle('active', !!selectedValue && v === selectedValue);
+                });
+            }
+
+            // =================== Events & Wiring ===================
+
+            // Tabs
+            els.tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    els.tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const tab = btn.dataset.tab;
+
+                    els.tabPrices.hidden = tab !== 'prices';
+                    els.tabContacts.hidden = tab !== 'contacts';
+                    els.tabElevPrices.hidden = tab !== 'elev-prices';
+                    els.tabElevInfo.hidden = tab !== 'elev-info';
+
+                    if (tab === 'prices') scheduleRerender();
+                    if (tab === 'elev-prices') renderElevPrices();
+                    if (tab === 'elev-info') renderElevDirectory();
+                });
+            });
+
+            // Prices events
+            els.reload.addEventListener('click', fetchDefault);
+            els.reloadKernel.addEventListener('click', fetchKernel);
+            els.fileInput.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onFileChosen(f); });
+            els.apply.addEventListener('click', render);
+            els.reset.addEventListener('click', () => {
+                els.company.value = ''; els.currency.value = 'UAH';
+                els.startDate.value = toISO(DATE_MIN); els.endDate.value = toISO(DATE_MAX);
+                selected.clear();
+                buildCulturePanel();
+                render();
+            });
+            els.selectNone.addEventListener('click', () => {
+                selected.clear();
+                els.cultureGrid.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
+                render();
+            });
+            els.exportCsv.addEventListener('click', exportCsv);
+
+            ['change'].forEach(ev => {
+                els.company.addEventListener(ev, render);
+                els.currency.addEventListener(ev, render);
+                els.startDate.addEventListener(ev, render);
+                els.endDate.addEventListener(ev, render);
+            });
+
+            // sellers chips toggle
+            els.infoBar.addEventListener('click', (e) => {
+                const t = e.target.closest('.pill.clickable[data-company]');
+                if (!t) return;
+                const company = t.getAttribute('data-company');
+                els.company.value = (els.company.value === company) ? '' : company;
+                render();
+            });
+
+            // Fullscreen controls for prices chart
+            els.fsBtn.addEventListener('click', () => { inFullscreen() ? exitFs() : enterFs(); });
+            document.addEventListener('fullscreenchange', onFsChange);
+            document.addEventListener('webkitfullscreenchange', onFsChange);
+            window.addEventListener('resize', scheduleRerender);
+
+            // Contacts events
+            els.contactsReload.addEventListener('click', fetchContactsDefault);
+            els.contactsSalesReload.addEventListener('click', fetchContactsSales);
+            els.contactsFile.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onContactsFile(f); });
+            els.regionSelect.addEventListener('change', e => { regionSel = e.target.value || ''; renderContacts(); });
+            els.regionsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-region]'); if (!t) return;
+                const r = t.getAttribute('data-region');
+                regionSel = (regionSel === r) ? '' : r;
+                els.regionSelect.value = regionSel;
+                renderContacts();
+            });
+            els.categorySelect.addEventListener('change', e => { categorySel = e.target.value || ''; renderContacts(); });
+            els.categoriesBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-category]'); if (!t) return;
+                const c = t.getAttribute('data-category');
+                categorySel = (categorySel === c) ? '' : c;
+                els.categorySelect.value = categorySel;
+                renderContacts();
+            });
+            els.contactSearch.addEventListener('input', e => { searchSel = e.target.value.trim(); renderContacts(); });
+
+            // Elevator prices events
+            els.elevReload.addEventListener('click', () => fetchElevatorsDefault(els.elevStatus));
+            els.elevFile.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onElevatorsFile(f, els.elevStatus); });
+            els.elevApply.addEventListener('click', renderElevPrices);
+            els.elevReset.addEventListener('click', () => {
+                elevSelected.clear(); elevElevSel.clear(); elevTermSel.clear();
+                if (ELEV_DATE_MIN && ELEV_DATE_MAX) { els.elevStartDate.value = toISO(ELEV_DATE_MIN); els.elevEndDate.value = toISO(ELEV_DATE_MAX); }
+                buildElevChips(); buildElevCulturePanel(); renderElevPrices();
+            });
+            els.elevSelectNone.addEventListener('click', () => {
+                elevSelected.clear(); els.elevCultureGrid.querySelectorAll('input[type="checkbox"]').forEach(x => x.checked = false);
+                renderElevPrices();
+            });
+            els.elevExportCsv.addEventListener('click', exportElevCsv);
+
+            // Chips toggling
+            els.elevElevatorsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-elv]'); if (!t) return;
+                const name = t.getAttribute('data-elv'); elevElevSel.has(name) ? elevElevSel.delete(name) : elevElevSel.add(name);
+                buildElevChips(); renderElevPrices();
+            });
+            els.elevTerminalsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-term]'); if (!t) return;
+                const name = t.getAttribute('data-term'); elevTermSel.has(name) ? elevTermSel.delete(name) : elevTermSel.add(name);
+                buildElevChips(); renderElevPrices();
+            });
+
+            // Info bar toggles too
+            els.elevInfoBar.addEventListener('click', e => {
+                const el = e.target.closest('.pill.clickable[data-elv]'); const tm = e.target.closest('.pill.clickable[data-term]');
+                if (el) { const n = el.getAttribute('data-elv'); elevElevSel.has(n) ? elevElevSel.delete(n) : elevElevSel.add(n); buildElevChips(); renderElevPrices(); }
+                if (tm) { const n = tm.getAttribute('data-term'); elevTermSel.has(n) ? elevTermSel.delete(n) : elevTermSel.add(n); buildElevChips(); renderElevPrices(); }
+            });
+
+            // Elevator chart fullscreen
+            wireFsFor(els.elevChartWrap, els.elevFsBtn, renderElevPrices);
+
+            // Date changes
+            ['change'].forEach(ev => {
+                els.elevStartDate.addEventListener(ev, renderElevPrices);
+                els.elevEndDate.addEventListener(ev, renderElevPrices);
+            });
+
+            // Directory events (share data)
+            els.elevReload2.addEventListener('click', () => fetchElevatorsDefault(els.elevStatus2));
+            els.elevFile2.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) onElevatorsFile(f, els.elevStatus2); });
+            els.elevRegionSelect.addEventListener('change', e => {
+                elevRegionSel = e.target.value || '';
+                syncActivePills(els.elevRegionsBar, 'data-elev-region', elevRegionSel);
+                renderElevDirectory();
+            });
+            els.elevRegionsBar.addEventListener('click', e => {
+                const t = e.target.closest('.pill.clickable[data-elev-region]'); if (!t) return;
+                const r = t.getAttribute('data-elev-region');
+                elevRegionSel = (elevRegionSel === r) ? '' : r;
+                els.elevRegionSelect.value = elevRegionSel;
+                syncActivePills(els.elevRegionsBar, 'data-elev-region', elevRegionSel);
+                renderElevDirectory();
+            });
+            els.elevSearch.addEventListener('input', e => { elevSearchSel = e.target.value.trim(); renderElevDirectory(); });
+
+            // Start
+            fetchDefault();            // prices
+            // Try to load both contact datasets by default; ignore missing optional file.
+            fetchContactsDefault();
+            fetchContactsSales();
+            // Try to load elevators.json if present
+            fetchElevatorsDefault();
+        })();
+    </script>
+</body>
+
+</html>
